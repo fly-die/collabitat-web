@@ -1,0 +1,22 @@
+.app {
+  max-width: var(--content-max-width);
+  margin: 0 auto;
+  padding: calc(var(--space-6) + env(safe-area-inset-top)) var(--space-4) var(--space-6);
+}
+
+.app__title {
+  margin: 0 0 var(--space-2);
+  font-size: var(--font-size-title);
+  font-weight: 700;
+}
+
+.app__intro {
+  margin: 0 0 var(--space-4);
+}
+
+.app__status {
+  margin: 0;
+  padding-top: var(--space-4);
+  border-top: 1px solid var(--color-line);
+  color: var(--color-ink-muted);
+}

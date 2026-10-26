@@ -1,0 +1,20 @@
+:root {
+  --color-ink: #17201c;
+  --color-ink-muted: #4c5a53;
+  --color-surface: #ffffff;
+  --color-canvas: #eef2ef;
+  --color-accent: #1f6f5c;
+  --color-owe: #a3461a;
+  --color-line: #cbd5cf;
+
+  --font-body: "Atkinson Hyperlegible", system-ui, sans-serif;
+  --font-size-body: 1.0625rem;
+  --font-size-title: 1.75rem;
+  --line-height-body: 1.5;
+
+  --space-1: 0.25rem;
+  --space-2: 0.5rem;
+  --space-4: 1rem;
+  --space-6: 1.5rem;
+  --content-max-width: 34rem;
+}
