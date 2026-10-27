@@ -6,8 +6,6 @@ function json(status: number, body: unknown) {
 
 export function createFakeHouseholdsServer() {
   const households = new Map<string, Household>();
-  let nextId = 1;
-
   async function handle(input: RequestInfo | URL, init?: RequestInit) {
     const { pathname } = new URL(String(input));
     const [, , householdId, , memberId] = pathname.split("/");
@@ -15,7 +13,7 @@ export function createFakeHouseholdsServer() {
     const name = init?.body ? (JSON.parse(String(init.body)).name as string).trim() : "";
 
     if (method === "POST" && !householdId) {
-      const household = { id: `household-${nextId++}`, name, members: [] };
+      const household = { id: crypto.randomUUID(), name, members: [] };
       households.set(household.id, household);
       return json(201, household);
     }
@@ -31,7 +29,7 @@ export function createFakeHouseholdsServer() {
       if (household.members.some((member) => member.name.toLowerCase() === name.toLowerCase())) {
         return json(409, { error: "DUPLICATE_MEMBER", message: `${name} is already a member.` });
       }
-      household.members = [...household.members, { id: `member-${nextId++}`, name }];
+      household.members = [...household.members, { id: crypto.randomUUID(), name }];
       return json(201, household);
     }
     household.members = household.members.filter((member) => member.id !== memberId);

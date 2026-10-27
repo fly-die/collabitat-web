@@ -13,6 +13,7 @@ export interface Household {
 
 export const NETWORK_ERROR_CODE = "NETWORK_ERROR";
 export const HOUSEHOLD_NOT_FOUND_CODE = "HOUSEHOLD_NOT_FOUND";
+export const MEMBER_NOT_FOUND_CODE = "MEMBER_NOT_FOUND";
 
 export class ApiError extends Error {
   constructor(
@@ -42,15 +43,31 @@ async function request<T>(path: string, init?: RequestInit): Promise<T> {
   return body as T;
 }
 
+const UUID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
+// Ids come from storage and server responses, so only well-formed UUIDs reach a URL.
+function safeId(id: string, notFoundCode: string): string {
+  if (!UUID_PATTERN.test(id)) {
+    throw new ApiError(notFoundCode, "Not found.");
+  }
+  return id;
+}
+
+function householdPath(householdId: string) {
+  return `/households/${safeId(householdId, HOUSEHOLD_NOT_FOUND_CODE)}`;
+}
+
 export const householdsApi = {
   create: (name: string) =>
     request<Household>("/households", { method: "POST", body: JSON.stringify({ name }) }),
-  get: (householdId: string) => request<Household>(`/households/${householdId}`),
-  addMember: (householdId: string, name: string) =>
-    request<Household>(`/households/${householdId}/members`, {
+  get: async (householdId: string) => request<Household>(householdPath(householdId)),
+  addMember: async (householdId: string, name: string) =>
+    request<Household>(`${householdPath(householdId)}/members`, {
       method: "POST",
       body: JSON.stringify({ name }),
     }),
-  removeMember: (householdId: string, memberId: string) =>
-    request<Household>(`/households/${householdId}/members/${memberId}`, { method: "DELETE" }),
+  removeMember: async (householdId: string, memberId: string) =>
+    request<Household>(`${householdPath(householdId)}/members/${safeId(memberId, MEMBER_NOT_FOUND_CODE)}`, {
+      method: "DELETE",
+    }),
 };

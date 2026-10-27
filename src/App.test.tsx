@@ -90,11 +90,20 @@ describe("household setup", () => {
     render(<App />);
 
     expect(await screen.findByRole("heading", { level: 1, name: "Langstrasse 12" })).toBeInTheDocument();
-    expect(localStorage.getItem(HOUSEHOLD_ID_STORAGE_KEY)).toBe("household-1");
+    expect(server.households.has(localStorage.getItem(HOUSEHOLD_ID_STORAGE_KEY) ?? "")).toBe(true);
+  });
+
+  it("starts over when the stored household id is not valid", async () => {
+    localStorage.setItem(HOUSEHOLD_ID_STORAGE_KEY, "../admin");
+
+    render(<App />);
+
+    expect(await screen.findByRole("heading", { name: "Start your household" })).toBeInTheDocument();
+    expect(localStorage.getItem(HOUSEHOLD_ID_STORAGE_KEY)).toBeNull();
   });
 
   it("offers a retry when the server is unreachable", async () => {
-    localStorage.setItem(HOUSEHOLD_ID_STORAGE_KEY, "household-1");
+    localStorage.setItem(HOUSEHOLD_ID_STORAGE_KEY, crypto.randomUUID());
     vi.stubGlobal("fetch", vi.fn().mockRejectedValue(new TypeError("offline")));
 
     render(<App />);
