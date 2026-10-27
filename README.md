@@ -30,7 +30,7 @@ npm install
 npm run dev
 ```
 
-Open `http://localhost:5173`.
+Open `http://localhost:5173`. The app expects the [API](https://github.com/fly-die/collabitat-api) on `http://localhost:3000`. Set `VITE_API_URL` to use another address.
 
 ## Scripts
 

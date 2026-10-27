@@ -17,4 +17,6 @@
   --space-4: 1rem;
   --space-6: 1.5rem;
   --content-max-width: 34rem;
+  --touch-target: 2.75rem;
+  --radius: 0.5rem;
 }
