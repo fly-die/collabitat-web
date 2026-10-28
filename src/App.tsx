@@ -2,6 +2,7 @@ import "./App.css";
 import { HouseholdView } from "./households/HouseholdView";
 import { NameForm } from "./households/NameForm";
 import { useHousehold } from "./households/useHousehold";
+import { InstallHint } from "./install/InstallHint";
 
 export function App() {
   const { state, retry, createHousehold, addMember, removeMember } = useHousehold();
@@ -35,11 +36,14 @@ export function App() {
       )}
 
       {state.status === "ready" && (
-        <HouseholdView
-          household={state.household}
-          onAddMember={(name) => addMember(state.household.id, name)}
-          onRemoveMember={(memberId) => removeMember(state.household.id, memberId)}
-        />
+        <>
+          <HouseholdView
+            household={state.household}
+            onAddMember={(name) => addMember(state.household.id, name)}
+            onRemoveMember={(memberId) => removeMember(state.household.id, memberId)}
+          />
+          <InstallHint />
+        </>
       )}
     </main>
   );
