@@ -31,13 +31,13 @@ export function NameForm({ label, placeholder, submitLabel, onSubmit }: NameForm
 
   return (
     <form className="name-form" onSubmit={handleSubmit} noValidate>
-      <label className="name-form__label" htmlFor={inputId}>
+      <label className="field-label" htmlFor={inputId}>
         {label}
       </label>
       <div className="name-form__row">
         <input
           id={inputId}
-          className="name-form__input"
+          className="text-input"
           value={name}
           placeholder={placeholder}
           autoComplete="off"
@@ -53,7 +53,7 @@ export function NameForm({ label, placeholder, submitLabel, onSubmit }: NameForm
         </button>
       </div>
       {error && (
-        <p id={errorId} className="name-form__error" role="alert">
+        <p id={errorId} className="form-error" role="alert">
           {error}
         </p>
       )}

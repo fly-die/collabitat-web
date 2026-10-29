@@ -1,45 +1,61 @@
 import { useEffect, useState } from "react";
 import {
-  HOUSEHOLD_NOT_FOUND_CODE,
+  UNAUTHORIZED_CODE,
+  endSession,
+  hasSession,
   householdsApi,
   type ApiError,
   type Household,
 } from "../api/households-api";
+import { clearInviteFromLocation, inviteCodeFromLocation } from "./invite-link";
 
-export const HOUSEHOLD_ID_STORAGE_KEY = "collabitat.householdId";
+const LEGACY_HOUSEHOLD_ID_KEY = "collabitat.householdId";
 
 type HouseholdState =
   | { status: "loading" }
   | { status: "none" }
+  | { status: "joining"; inviteCode: string }
   | { status: "ready"; household: Household }
   | { status: "unreachable"; message: string };
 
-function storedHouseholdId() {
-  return localStorage.getItem(HOUSEHOLD_ID_STORAGE_KEY);
+function stateWithoutHousehold(): HouseholdState {
+  const inviteCode = inviteCodeFromLocation();
+  return inviteCode ? { status: "joining", inviteCode } : { status: "none" };
 }
 
 export function useHousehold() {
   const [state, setState] = useState<HouseholdState>(() =>
-    storedHouseholdId() ? { status: "loading" } : { status: "none" },
+    hasSession() ? { status: "loading" } : stateWithoutHousehold(),
   );
   const [loadAttempt, setLoadAttempt] = useState(0);
 
   useEffect(() => {
-    const householdId = storedHouseholdId();
-    if (!householdId) {
+    localStorage.removeItem(LEGACY_HOUSEHOLD_ID_KEY);
+    if (!hasSession()) {
       return;
     }
     let isCurrent = true;
     householdsApi
-      .get(householdId)
-      .then((household) => isCurrent && setState({ status: "ready", household }))
+      .get()
+      .then((household) => {
+        if (!isCurrent) {
+          return;
+        }
+        const inviteCode = inviteCodeFromLocation();
+        if (inviteCode && inviteCode !== household.inviteCode) {
+          setState({ status: "joining", inviteCode });
+          return;
+        }
+        clearInviteFromLocation();
+        setState({ status: "ready", household });
+      })
       .catch((error: ApiError) => {
         if (!isCurrent) {
           return;
         }
-        if (error.code === HOUSEHOLD_NOT_FOUND_CODE) {
-          localStorage.removeItem(HOUSEHOLD_ID_STORAGE_KEY);
-          setState({ status: "none" });
+        if (error.code === UNAUTHORIZED_CODE) {
+          endSession();
+          setState(stateWithoutHousehold());
         } else {
           setState({ status: "unreachable", message: error.message });
         }
@@ -54,19 +70,23 @@ export function useHousehold() {
     setLoadAttempt((attempt) => attempt + 1);
   };
 
-  const showHousehold = (household: Household) => setState({ status: "ready", household });
-
-  const createHousehold = async (name: string) => {
-    const household = await householdsApi.create(name);
-    localStorage.setItem(HOUSEHOLD_ID_STORAGE_KEY, household.id);
-    showHousehold(household);
+  const showHousehold = (household: Household) => {
+    clearInviteFromLocation();
+    setState({ status: "ready", household });
   };
 
-  const addMember = async (householdId: string, name: string) =>
-    showHousehold(await householdsApi.addMember(householdId, name));
+  const startOwnHousehold = () => {
+    clearInviteFromLocation();
+    setState({ status: "none" });
+  };
 
-  const removeMember = async (householdId: string, memberId: string) =>
-    showHousehold(await householdsApi.removeMember(householdId, memberId));
+  const createHousehold = async (name: string, memberName: string) =>
+    showHousehold(await householdsApi.create(name, memberName));
 
-  return { state, retry, createHousehold, addMember, removeMember };
+  const addMember = async (name: string) => showHousehold(await householdsApi.addMember(name));
+
+  const removeMember = async (memberId: string) =>
+    showHousehold(await householdsApi.removeMember(memberId));
+
+  return { state, retry, showHousehold, startOwnHousehold, createHousehold, addMember, removeMember };
 }

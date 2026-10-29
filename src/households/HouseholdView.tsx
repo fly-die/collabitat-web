@@ -1,5 +1,7 @@
 import { useEffect, useState } from "react";
 import type { Household, Member } from "../api/households-api";
+import { Doorbell, DoorbellPlate } from "./Doorbell";
+import { InviteShare } from "./InviteShare";
 import { NameForm } from "./NameForm";
 
 export const UNDO_TIMEOUT_MS = 6000;
@@ -41,32 +43,40 @@ export function HouseholdView({ household, onAddMember, onRemoveMember }: Househ
         <h2 id="members-heading" className="section-title">
           Flatmates
         </h2>
-        {household.members.length === 0 ? (
-          <p className="hint">No one here yet. Add the people you live with.</p>
-        ) : (
-          <ul className="member-list">
-            {household.members.map((member) => (
-              <li key={member.id} className="member-list__item">
-                <span>{member.name}</span>
-                <button
-                  className="button button--quiet"
-                  type="button"
-                  aria-label={`Remove ${member.name}`}
-                  onClick={() => removeMember(member)}
-                >
-                  Remove
-                </button>
-              </li>
-            ))}
-          </ul>
+        <Doorbell label="Flatmates">
+          {household.members.map((member) => {
+            const isMe = member.id === household.currentMemberId;
+            return (
+              <DoorbellPlate
+                key={member.id}
+                hasJoined={member.hasJoined}
+                action={
+                  !isMe && (
+                    <button
+                      className="button button--quiet"
+                      type="button"
+                      aria-label={`Remove ${member.name}`}
+                      onClick={() => removeMember(member)}
+                    >
+                      Remove
+                    </button>
+                  )
+                }
+              >
+                {member.name}
+                {isMe && <span className="doorbell__note"> (you)</span>}
+                {!member.hasJoined && <span className="doorbell__note">Not joined yet</span>}
+              </DoorbellPlate>
+            );
+          })}
+        </Doorbell>
+        {household.members.length === 1 && (
+          <p className="hint">Add the people you live with, or send them the invite link below.</p>
         )}
-        <NameForm
-          label="Add a flatmate"
-          placeholder="Name"
-          submitLabel="Add"
-          onSubmit={onAddMember}
-        />
+        <NameForm label="Add a flatmate" placeholder="Name" submitLabel="Add" onSubmit={onAddMember} />
       </section>
+
+      <InviteShare householdName={household.name} inviteCode={household.inviteCode} />
 
       {removedMember && (
         <div className="undo-bar" role="status">
