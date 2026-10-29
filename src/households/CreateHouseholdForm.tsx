@@ -57,7 +57,7 @@ export function CreateHouseholdForm({ onSubmit }: CreateHouseholdFormProps) {
           {error}
         </p>
       )}
-      <button className="button button--wide" type="submit" disabled={isSubmitting || !isComplete}>
+      <button className="button button--block button--submit" type="submit" disabled={isSubmitting || !isComplete}>
         Create household
       </button>
     </form>

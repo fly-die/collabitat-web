@@ -78,6 +78,7 @@ export function JoinScreen({ inviteCode, onJoined, onStartOwnHousehold }: JoinSc
   return (
     <>
       <h1 className="page-title">Join {householdName}</h1>
+      {membersToJoin.length === 0 && <p className="intro">Your flatmates will see you under this name.</p>}
       {membersToJoin.length > 0 && (
         <>
           <p className="intro">Which one are you?</p>

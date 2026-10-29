@@ -75,6 +75,8 @@ export function useHousehold() {
     setState({ status: "ready", household });
   };
 
+  const openInvite = (inviteCode: string) => setState({ status: "joining", inviteCode });
+
   const startOwnHousehold = () => {
     clearInviteFromLocation();
     setState({ status: "none" });
@@ -88,5 +90,14 @@ export function useHousehold() {
   const removeMember = async (memberId: string) =>
     showHousehold(await householdsApi.removeMember(memberId));
 
-  return { state, retry, showHousehold, startOwnHousehold, createHousehold, addMember, removeMember };
+  return {
+    state,
+    retry,
+    showHousehold,
+    openInvite,
+    startOwnHousehold,
+    createHousehold,
+    addMember,
+    removeMember,
+  };
 }
