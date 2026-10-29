@@ -6,9 +6,11 @@ interface NameFormProps {
   placeholder: string;
   submitLabel: string;
   onSubmit: (name: string) => Promise<void>;
+  // "inline" sits as the last row inside a panel, with its label kept for screen readers only.
+  variant?: "standalone" | "inline";
 }
 
-export function NameForm({ label, placeholder, submitLabel, onSubmit }: NameFormProps) {
+export function NameForm({ label, placeholder, submitLabel, onSubmit, variant = "standalone" }: NameFormProps) {
   const inputId = useId();
   const errorId = useId();
   const [name, setName] = useState("");
@@ -30,8 +32,8 @@ export function NameForm({ label, placeholder, submitLabel, onSubmit }: NameForm
   }
 
   return (
-    <form className="name-form" onSubmit={handleSubmit} noValidate>
-      <label className="field-label" htmlFor={inputId}>
+    <form className={`name-form name-form--${variant}`} onSubmit={handleSubmit} noValidate>
+      <label className={variant === "inline" ? "visually-hidden" : "field-label"} htmlFor={inputId}>
         {label}
       </label>
       <div className="name-form__row">

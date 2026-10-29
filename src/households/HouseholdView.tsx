@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import type { Household, Member } from "../api/households-api";
 import { Doorbell, DoorbellPlate } from "./Doorbell";
-import { InviteShare } from "./InviteShare";
+import { InviteShareFeedback, useInviteShare } from "./InviteShare";
 import { NameForm } from "./NameForm";
 
 export const UNDO_TIMEOUT_MS = 6000;
@@ -12,8 +12,18 @@ interface HouseholdViewProps {
   onRemoveMember: (memberId: string) => Promise<void>;
 }
 
+function nextStepTitle(household: Household) {
+  const waiting = household.members.filter((member) => !member.hasJoined);
+  if (waiting.length === 0) {
+    return household.members.length === 1 ? "Invite your flatmates" : undefined;
+  }
+  return waiting.length === 1 ? `Get ${waiting[0].name} to join` : `Get ${waiting.length} flatmates to join`;
+}
+
 export function HouseholdView({ household, onAddMember, onRemoveMember }: HouseholdViewProps) {
   const [removedMember, setRemovedMember] = useState<Member>();
+  const invite = useInviteShare(household.name, household.inviteCode);
+  const openStep = nextStepTitle(household);
 
   useEffect(() => {
     if (!removedMember) {
@@ -36,11 +46,12 @@ export function HouseholdView({ household, onAddMember, onRemoveMember }: Househ
   }
 
   return (
-    <>
-      <h1 className="page-title">{household.name}</h1>
+    <div className="screen">
+      <p className="eyebrow">Your household</p>
+      <h1 className="page-title page-title--large">{household.name}</h1>
 
       <section aria-labelledby="members-heading">
-        <h2 id="members-heading" className="section-title">
+        <h2 id="members-heading" className="visually-hidden">
           Flatmates
         </h2>
         <Doorbell label="Flatmates">
@@ -51,7 +62,9 @@ export function HouseholdView({ household, onAddMember, onRemoveMember }: Househ
                 key={member.id}
                 hasJoined={member.hasJoined}
                 action={
-                  !isMe && (
+                  isMe ? (
+                    <span className="you-tag">You</span>
+                  ) : (
                     <button
                       className="button button--quiet"
                       type="button"
@@ -64,19 +77,54 @@ export function HouseholdView({ household, onAddMember, onRemoveMember }: Househ
                 }
               >
                 {member.name}
-                {isMe && <span className="doorbell__note"> (you)</span>}
                 {!member.hasJoined && <span className="doorbell__note">Not joined yet</span>}
               </DoorbellPlate>
             );
           })}
+          <li className="doorbell__add">
+            <NameForm
+              label="Add a flatmate"
+              placeholder="+ Add a flatmate"
+              submitLabel="Add"
+              variant="inline"
+              onSubmit={onAddMember}
+            />
+          </li>
         </Doorbell>
-        {household.members.length === 1 && (
-          <p className="hint">Add the people you live with, or send them the invite link below.</p>
-        )}
-        <NameForm label="Add a flatmate" placeholder="Name" submitLabel="Add" onSubmit={onAddMember} />
       </section>
 
-      <InviteShare householdName={household.name} inviteCode={household.inviteCode} />
+      {openStep ? (
+        <section className="getting-started" aria-labelledby="getting-started-heading">
+          <h2 id="getting-started-heading" className="section-title">
+            Getting started
+          </h2>
+          <ol className="steps">
+            <li className="steps__done">
+              <svg className="steps__check" viewBox="0 0 24 24" aria-hidden="true">
+                <path d="m5 12 5 5 9-10" />
+              </svg>
+              Household set up
+            </li>
+            <li className="steps__open">
+              <span className="steps__title">
+                <span className="steps__ring" aria-hidden="true" />
+                {openStep}
+              </span>
+              <button className="button button--block" type="button" onClick={invite.share}>
+                Share invite link
+              </button>
+              <InviteShareFeedback status={invite.status} link={invite.link} />
+            </li>
+          </ol>
+        </section>
+      ) : (
+        <div className="later-invite">
+          <button className="button button--outline" type="button" onClick={invite.share}>
+            Share invite link
+          </button>
+          <InviteShareFeedback status={invite.status} link={invite.link} />
+        </div>
+      )}
 
       {removedMember && (
         <div className="undo-bar" role="status">
@@ -86,6 +134,6 @@ export function HouseholdView({ household, onAddMember, onRemoveMember }: Househ
           </button>
         </div>
       )}
-    </>
+    </div>
   );
 }

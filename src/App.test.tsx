@@ -10,6 +10,7 @@ function type(label: string, value: string) {
 }
 
 async function createHousehold(name = "Langstrasse 12", memberName = "Mia") {
+  fireEvent.click(await screen.findByRole("button", { name: "Start a household" }));
   type("Household name", name);
   type("Your name", memberName);
   fireEvent.click(screen.getByRole("button", { name: "Create household" }));
@@ -24,6 +25,7 @@ async function addFlatmate(name: string) {
 function flatmateNames() {
   return within(screen.getByRole("list", { name: "Flatmates" }))
     .getAllByRole("listitem")
+    .filter((item) => !item.querySelector("form"))
     .map((item) => item.textContent);
 }
 
@@ -54,7 +56,7 @@ describe("household", () => {
     await addFlatmate("Lea");
 
     expect(await screen.findByText("Lea")).toBeInTheDocument();
-    expect(flatmateNames()).toEqual(["Mia (you)", "LeaNot joined yetRemove"]);
+    expect(flatmateNames()).toEqual(["MiaYou", "LeaNot joined yetRemove"]);
     expect(screen.queryByRole("button", { name: "Remove Mia" })).not.toBeInTheDocument();
   });
 
@@ -102,7 +104,7 @@ describe("household", () => {
 
     render(<App />);
 
-    expect(await screen.findByRole("heading", { name: "Start your household" })).toBeInTheDocument();
+    expect(await screen.findByRole("button", { name: "Start a household" })).toBeInTheDocument();
     expect(localStorage.getItem(SESSION_STORAGE_KEY)).toBeNull();
   });
 
@@ -128,6 +130,36 @@ describe("household", () => {
     expect(writeText).toHaveBeenCalledWith(expect.stringMatching(/#invite=[0-9a-f]{32}$/));
   });
 
+  it("welcomes me with a choice before asking for anything", async () => {
+    render(<App />);
+
+    expect(await screen.findByRole("heading", { level: 1, name: /Shared flat/ })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Join with an invite link" })).toBeInTheDocument();
+    expect(screen.queryByLabelText("Household name")).not.toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole("button", { name: "Start a household" }));
+    fireEvent.click(screen.getByRole("button", { name: "Back" }));
+    expect(screen.getByRole("button", { name: "Join with an invite link" })).toBeInTheDocument();
+  });
+
+  it("shows the next step until everyone has joined", async () => {
+    const { unmount } = render(<App />);
+    await createHousehold();
+    expect(screen.getByText("Invite your flatmates")).toBeInTheDocument();
+
+    await addFlatmate("Lea");
+    expect(await screen.findByText("Get Lea to join")).toBeInTheDocument();
+    unmount();
+
+    openInviteLink([...server.households.values()][0].inviteCode);
+    render(<App />);
+    fireEvent.click(await screen.findByRole("button", { name: "Lea" }));
+
+    await screen.findByRole("heading", { level: 1, name: "Langstrasse 12" });
+    expect(screen.queryByRole("heading", { name: "Getting started" })).not.toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Share invite link" })).toBeInTheDocument();
+  });
+
   describe("joining with an invite link", () => {
     async function householdWithLea() {
       const { unmount } = render(<App />);
@@ -145,7 +177,7 @@ describe("household", () => {
       fireEvent.click(await screen.findByRole("button", { name: "Lea" }));
 
       expect(await screen.findByRole("heading", { level: 1, name: "Langstrasse 12" })).toBeInTheDocument();
-      expect(flatmateNames()).toContain("Lea (you)");
+      expect(flatmateNames()).toContain("LeaYou");
       expect(window.location.hash).toBe("");
     });
 
@@ -158,7 +190,7 @@ describe("household", () => {
       fireEvent.click(screen.getByRole("button", { name: "Join" }));
 
       await screen.findByRole("heading", { level: 1, name: "Langstrasse 12" });
-      expect(flatmateNames()).toContain("Noah (you)");
+      expect(flatmateNames()).toContain("NoahYou");
     });
 
     it("explains a broken link and offers to start a household", async () => {
@@ -168,6 +200,27 @@ describe("household", () => {
       fireEvent.click(await screen.findByRole("button", { name: "Start a household" }));
 
       expect(screen.getByRole("heading", { name: "Start your household" })).toBeInTheDocument();
+    });
+    it("opens a pasted invite link", async () => {
+      const inviteCode = await householdWithLea();
+      localStorage.removeItem(SESSION_STORAGE_KEY);
+      render(<App />);
+
+      fireEvent.click(await screen.findByRole("button", { name: "Join with an invite link" }));
+      type("Invite link", `https://example.org/collabitat-web/#invite=${inviteCode}`);
+      fireEvent.click(screen.getByRole("button", { name: "Open" }));
+
+      expect(await screen.findByRole("heading", { name: "Join Langstrasse 12" })).toBeInTheDocument();
+    });
+
+    it("explains when pasted text is not an invite link", async () => {
+      render(<App />);
+
+      fireEvent.click(await screen.findByRole("button", { name: "Join with an invite link" }));
+      type("Invite link", "see you at 8");
+      fireEvent.click(screen.getByRole("button", { name: "Open" }));
+
+      expect(await screen.findByRole("alert")).toHaveTextContent("doesn't look like an invite link");
     });
   });
 });

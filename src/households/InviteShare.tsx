@@ -3,7 +3,7 @@ import { inviteLink } from "./invite-link";
 
 type ShareStatus = "idle" | "copied" | "manual";
 
-export function InviteShare({ householdName, inviteCode }: { householdName: string; inviteCode: string }) {
+export function useInviteShare(householdName: string, inviteCode: string) {
   const [status, setStatus] = useState<ShareStatus>("idle");
   const link = inviteLink(inviteCode);
 
@@ -24,29 +24,27 @@ export function InviteShare({ householdName, inviteCode }: { householdName: stri
     }
   }
 
-  return (
-    <section className="invite" aria-labelledby="invite-heading">
-      <h2 id="invite-heading" className="section-title">
-        Invite flatmates
-      </h2>
-      <p className="hint">Anyone with the link can join {householdName}.</p>
-      <button className="button button--secondary" type="button" onClick={share}>
-        Share invite link
-      </button>
-      {status === "copied" && (
-        <p className="hint invite__status" role="status">
-          Link copied. Paste it into your flat chat.
-        </p>
-      )}
-      {status === "manual" && (
-        <input
-          className="text-input invite__link"
-          readOnly
-          value={link}
-          aria-label="Invite link"
-          onFocus={(event) => event.target.select()}
-        />
-      )}
-    </section>
-  );
+  return { share, status, link };
+}
+
+export function InviteShareFeedback({ status, link }: { status: ShareStatus; link: string }) {
+  if (status === "copied") {
+    return (
+      <p className="hint" role="status">
+        Link copied. Paste it into your flat chat.
+      </p>
+    );
+  }
+  if (status === "manual") {
+    return (
+      <input
+        className="text-input invite-link-field"
+        readOnly
+        value={link}
+        aria-label="Invite link"
+        onFocus={(event) => event.target.select()}
+      />
+    );
+  }
+  return null;
 }
