@@ -451,3 +451,67 @@
   display: flex;
   gap: var(--space-2);
 }
+
+/* Computers: same screens, laid out for a wide window. Phones never reach this. */
+
+@media (min-width: 56rem) {
+  .app {
+    max-width: none;
+  }
+
+  .screen {
+    max-width: var(--content-max-width);
+    margin: 0 auto;
+    padding-top: 12vh;
+  }
+
+  .welcome {
+    flex-direction: row;
+  }
+
+  .welcome__block {
+    flex: 1 1 50%;
+    min-height: 100dvh;
+    padding: var(--space-8) 4rem 4rem;
+  }
+
+  .welcome__title {
+    font-size: clamp(4.5rem, 7vw, 7rem);
+  }
+
+  .welcome__areas {
+    max-width: 32rem;
+    font-size: 1.125rem;
+  }
+
+  .welcome__body {
+    flex: 1 1 50%;
+    justify-content: center;
+    max-width: 30rem;
+    padding: 4rem;
+  }
+
+  .welcome__actions {
+    margin-top: var(--space-4);
+  }
+
+  .household {
+    display: grid;
+    grid-template-columns: minmax(0, 1.4fr) minmax(0, 1fr);
+    align-items: start;
+    column-gap: 4rem;
+    max-width: 64rem;
+  }
+
+  .household__aside .section-title {
+    margin-top: 0;
+  }
+
+  .household__aside .later-invite {
+    margin-top: 0;
+  }
+
+  .household__aside {
+    padding-top: 3.25rem;
+  }
+}
