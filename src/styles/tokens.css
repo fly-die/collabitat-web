@@ -6,23 +6,27 @@
   --color-accent: #1f6f5c;
   --color-owe: #a3461a;
   --color-line: #cbd5cf;
-  --color-plate-frame: #dfe6e1;
-  --color-plate-edge: #cbd5cf;
+  --color-divider: #e2e8e4;
+  --color-done: #e4ebe6;
   --color-accent-tint: #e4efeb;
 
   --font-body: "Atkinson Hyperlegible", system-ui, sans-serif;
   --font-size-body: 1.0625rem;
   --font-size-title: 2rem;
+  --font-size-display: 2.5rem;
   --font-size-small: 0.875rem;
   --line-height-body: 1.5;
 
   --space-1: 0.25rem;
   --space-2: 0.5rem;
+  --space-3: 0.75rem;
   --space-4: 1rem;
+  --space-5: 1.25rem;
   --space-6: 1.5rem;
   --space-8: 2rem;
   --content-max-width: 34rem;
   --touch-target: 2.75rem;
   --radius: 0.5rem;
-  --radius-panel: 0.75rem;
+  --radius-large: 0.75rem;
+  --radius-panel: 0.875rem;
 }

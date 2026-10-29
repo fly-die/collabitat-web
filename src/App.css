@@ -1,28 +1,53 @@
 .app {
   max-width: var(--content-max-width);
+  min-height: 100dvh;
   margin: 0 auto;
-  padding: calc(var(--space-4) + env(safe-area-inset-top)) var(--space-4)
+}
+
+.screen {
+  padding: calc(var(--space-8) + env(safe-area-inset-top)) var(--space-5)
     calc(var(--space-8) + env(safe-area-inset-bottom));
 }
 
-.app__mark {
-  display: block;
-  width: 2.5rem;
-  height: 2.5rem;
-  margin-bottom: var(--space-6);
+.screen--continued {
+  padding-top: 0;
 }
+
+.visually-hidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+
+/* Type */
 
 .page-title {
   margin: 0 0 var(--space-2);
   font-size: var(--font-size-title);
   font-weight: 700;
-  line-height: 1.15;
-  letter-spacing: -0.01em;
+  line-height: 1.1;
+  letter-spacing: -0.02em;
   overflow-wrap: anywhere;
 }
 
+.page-title--large {
+  font-size: var(--font-size-display);
+  line-height: 1;
+  letter-spacing: -0.03em;
+}
+
+.eyebrow {
+  margin: 0 0 var(--space-1);
+  color: var(--color-accent);
+  font-size: var(--font-size-small);
+  font-weight: 700;
+}
+
 .section-title {
-  margin: var(--space-8) 0 var(--space-2);
+  margin: var(--space-8) 0 var(--space-3);
   font-size: var(--font-size-body);
   font-weight: 700;
 }
@@ -30,6 +55,8 @@
 .intro {
   margin: 0 0 var(--space-6);
   color: var(--color-ink-muted);
+  font-size: 1.0625rem;
+  line-height: 1.45;
 }
 
 .hint {
@@ -37,14 +64,90 @@
   color: var(--color-ink-muted);
 }
 
-/* Buttons */
+.back-link {
+  min-height: var(--touch-target);
+  margin: calc(var(--space-3) * -1) 0 var(--space-4) calc(var(--space-2) * -1);
+  padding: 0 var(--space-2);
+  border: 0;
+  background: transparent;
+  color: var(--color-accent);
+  font: inherit;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+/* Welcome */
+
+.welcome {
+  display: flex;
+  flex-direction: column;
+  min-height: 100dvh;
+}
+
+.welcome__block {
+  display: flex;
+  flex-direction: column;
+  min-height: 58dvh;
+  padding: calc(var(--space-8) + env(safe-area-inset-top)) var(--space-6) var(--space-6);
+  background: var(--color-accent);
+  color: var(--color-surface);
+}
+
+.welcome__logo {
+  align-self: center;
+  width: 2.5rem;
+  height: 2.5rem;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.8;
+  stroke-linejoin: round;
+}
+
+.welcome__title {
+  margin: auto 0 0;
+  padding-top: var(--space-8);
+  font-size: clamp(3.25rem, 16vw, 4.25rem);
+  line-height: 0.96;
+  letter-spacing: -0.035em;
+}
+
+.welcome__areas {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: var(--space-2);
+  margin: var(--space-6) 0 0;
+  padding: var(--space-3) 0 0;
+  border-top: 2px solid currentColor;
+  list-style: none;
+}
+
+.welcome__number {
+  display: block;
+  font-weight: 700;
+}
+
+.welcome__body {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  padding: var(--space-6) var(--space-6) calc(var(--space-8) + env(safe-area-inset-bottom));
+}
+
+.welcome__actions {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  margin-top: auto;
+}
+
+/* Buttons: ink is the primary action, accent marks state */
 
 .button {
   min-height: var(--touch-target);
   padding: 0 var(--space-4);
   border: 0;
-  border-radius: var(--radius);
-  background: var(--color-accent);
+  border-radius: var(--radius-large);
+  background: var(--color-ink);
   color: var(--color-surface);
   font: inherit;
   font-weight: 700;
@@ -52,26 +155,33 @@
 }
 
 .button:disabled {
-  opacity: 0.45;
+  opacity: 0.4;
   cursor: default;
 }
 
-.button--wide {
+.button--block {
   width: 100%;
+  min-height: 3.5rem;
+  padding: 0 var(--space-5);
+  font-size: 1.125rem;
+  text-align: left;
+}
+
+.button--submit {
   margin-top: var(--space-6);
+}
+
+.button--outline,
+.button--secondary {
+  border: 1px solid var(--color-line);
+  background: var(--color-surface);
+  color: var(--color-ink);
 }
 
 .button--quiet {
   background: transparent;
   color: var(--color-ink-muted);
   font-weight: 400;
-}
-
-.button--secondary {
-  margin-top: var(--space-4);
-  border: 1px solid var(--color-line);
-  background: var(--color-surface);
-  color: var(--color-accent);
 }
 
 .button--on-dark {
@@ -115,50 +225,47 @@
   color: var(--color-owe);
 }
 
-.name-form {
-  margin-top: var(--space-4);
-}
-
 .name-form__row {
   display: flex;
   gap: var(--space-2);
 }
 
-/* Doorbell: flatmates as name plates next to bell buttons */
+/* Doorbell: every flatmate on one panel, the dot is their bell */
 
 .doorbell {
-  display: grid;
-  gap: var(--space-1);
-  margin: 0;
-  padding: var(--space-1);
+  margin: var(--space-6) 0 0;
+  padding: 0;
   list-style: none;
   border: 1px solid var(--color-line);
   border-radius: var(--radius-panel);
-  background: var(--color-plate-frame);
+  background: var(--color-surface);
+  overflow: hidden;
 }
 
 .doorbell__plate {
   display: flex;
   align-items: center;
   gap: var(--space-4);
-  min-height: var(--touch-target);
-  padding-left: var(--space-4);
-  border-radius: var(--radius);
-  background: var(--color-surface);
-  box-shadow: inset 0 -1px 0 var(--color-plate-edge);
+  min-height: 3.375rem;
+  padding: 0 var(--space-2) 0 var(--space-4);
+  border-bottom: 1px solid var(--color-divider);
+}
+
+.doorbell__plate--ring {
+  padding: 0;
 }
 
 .doorbell__bell {
   flex: none;
   width: 0.75rem;
   height: 0.75rem;
-  margin: 0 0.25rem;
   border-radius: 50%;
   background: var(--color-accent);
 }
 
 /* Dashed: added by a flatmate, but has not opened the invite yet. */
 .doorbell__bell--waiting {
+  box-sizing: border-box;
   border: 2px dashed var(--color-ink-muted);
   background: transparent;
 }
@@ -168,8 +275,9 @@
   flex: 1;
   flex-wrap: wrap;
   align-items: baseline;
-  column-gap: var(--space-2);
+  column-gap: var(--space-3);
   min-width: 0;
+  font-size: 1.125rem;
   font-weight: 700;
   overflow-wrap: anywhere;
 }
@@ -180,19 +288,14 @@
   font-weight: 400;
 }
 
-.doorbell__plate--ring {
-  padding-left: 0;
-}
-
 .doorbell__ring {
   display: flex;
   flex: 1;
   align-items: center;
   gap: var(--space-4);
-  min-height: var(--touch-target);
+  min-height: 3.375rem;
   padding: 0 var(--space-4);
   border: 0;
-  border-radius: var(--radius);
   background: transparent;
   color: inherit;
   font: inherit;
@@ -204,13 +307,115 @@
   background: var(--color-accent-tint);
 }
 
-/* Invite */
-
-.invite__status {
-  margin-top: var(--space-2);
+.doorbell__add .name-form__row {
+  gap: 0;
 }
 
-.invite__link {
+.doorbell__add .text-input {
+  min-height: 3.25rem;
+  border: 0;
+  border-radius: 0;
+  color: var(--color-ink);
+}
+
+.doorbell__add .text-input:focus-visible {
+  outline: 2px solid var(--color-accent);
+  outline-offset: -2px;
+}
+
+/* The Add button only appears once there is a name to add. */
+.doorbell__add .text-input:placeholder-shown + .button {
+  display: none;
+}
+
+.doorbell__add .text-input::placeholder {
+  color: var(--color-accent);
+  font-weight: 700;
+  opacity: 1;
+}
+
+.doorbell__add .button {
+  margin: var(--space-1);
+  border-radius: var(--radius);
+}
+
+.doorbell__add .form-error {
+  margin: 0;
+  padding: 0 var(--space-4) var(--space-3);
+}
+
+.you-tag {
+  margin-right: var(--space-2);
+  padding: 0.1875rem var(--space-2);
+  border-radius: 0.375rem;
+  background: var(--color-accent-tint);
+  color: var(--color-accent);
+  font-size: var(--font-size-small);
+  font-weight: 700;
+}
+
+/* Getting started */
+
+.steps {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.steps__done {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  min-height: 3.25rem;
+  padding: 0 var(--space-4);
+  border-radius: var(--radius-large);
+  background: var(--color-done);
+  color: var(--color-ink-muted);
+}
+
+.steps__check {
+  width: 1.25rem;
+  height: 1.25rem;
+  fill: none;
+  stroke: var(--color-accent);
+  stroke-width: 2.6;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.steps__open {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  padding: var(--space-4);
+  border: 1px solid var(--color-line);
+  border-radius: var(--radius-large);
+  background: var(--color-surface);
+}
+
+.steps__title {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  font-weight: 700;
+}
+
+.steps__ring {
+  width: 1.125rem;
+  height: 1.125rem;
+  border: 2px solid var(--color-ink);
+  border-radius: 50%;
+  box-sizing: border-box;
+}
+
+.later-invite {
+  margin-top: var(--space-6);
+}
+
+.invite-link-field {
   margin-top: var(--space-2);
 }
 
@@ -227,7 +432,7 @@
   max-width: var(--content-max-width);
   margin: 0 auto;
   padding-left: var(--space-4);
-  border-radius: var(--radius);
+  border-radius: var(--radius-large);
   background: var(--color-ink);
   color: var(--color-surface);
 }
@@ -235,7 +440,6 @@
 /* Install */
 
 .install-hint {
-  margin-top: var(--space-8);
   padding-top: var(--space-4);
   border-top: 1px solid var(--color-line);
 }
