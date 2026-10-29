@@ -73,8 +73,14 @@ async function request<T>(path: string, init?: RequestInit): Promise<T> {
   return body as T;
 }
 
+const SESSION_TOKEN_PATTERN = /^[A-Za-z0-9_-]{43}$/;
+
 async function startSession(path: string, init: RequestInit) {
   const { token, household } = await request<SessionResponse>(path, { method: "POST", ...init });
+  // Only a token in the shape the API issues is kept in storage.
+  if (!SESSION_TOKEN_PATTERN.test(token)) {
+    throw new ApiError(UNAUTHORIZED_CODE, "Something went wrong. Try again in a moment.");
+  }
   localStorage.setItem(SESSION_STORAGE_KEY, token);
   return household;
 }

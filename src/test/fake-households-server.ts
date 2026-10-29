@@ -18,7 +18,7 @@ export function createFakeHouseholdsServer() {
   }
 
   function startSession(household: Omit<Household, "currentMemberId">, memberId: string) {
-    const token = crypto.randomUUID();
+    const token = `${crypto.randomUUID().replaceAll("-", "")}${"t".repeat(11)}`;
     memberIdsByToken.set(token, memberId);
     return json(201, { token, household: { ...household, currentMemberId: memberId } });
   }
