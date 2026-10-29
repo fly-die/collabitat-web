@@ -9,9 +9,6 @@
     calc(var(--space-8) + env(safe-area-inset-bottom));
 }
 
-.screen--continued {
-  padding-top: 0;
-}
 
 .visually-hidden {
   position: absolute;
@@ -440,6 +437,7 @@
 /* Install */
 
 .install-hint {
+  margin-top: var(--space-8);
   padding-top: var(--space-4);
   border-top: 1px solid var(--color-line);
 }

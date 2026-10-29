@@ -63,12 +63,12 @@ export function App() {
       )}
 
       {state.status === "ready" && (
-        <>
-          <HouseholdView household={state.household} onAddMember={addMember} onRemoveMember={removeMember} />
-          <div className="screen screen--continued">
-            <InstallHint />
-          </div>
-        </>
+        <HouseholdView
+          household={state.household}
+          onAddMember={addMember}
+          onRemoveMember={removeMember}
+          footer={<InstallHint />}
+        />
       )}
     </main>
   );
