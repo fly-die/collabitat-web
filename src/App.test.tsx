@@ -18,14 +18,15 @@ async function createHousehold(name = "Langstrasse 12", memberName = "Mia") {
 }
 
 async function addFlatmate(name: string) {
-  type("Add a flatmate", name);
+  fireEvent.click(screen.getByRole("button", { name: "+ Add a flatmate" }));
+  type("New flatmate's name", name);
   fireEvent.click(screen.getByRole("button", { name: "Add" }));
 }
 
 function flatmateNames() {
   return within(screen.getByRole("list", { name: "Flatmates" }))
     .getAllByRole("listitem")
-    .filter((item) => !item.querySelector("form"))
+    .filter((item) => !item.querySelector("form, .doorbell__add-button"))
     .map((item) => item.textContent);
 }
 
@@ -58,6 +59,20 @@ describe("household", () => {
     expect(await screen.findByText("Lea")).toBeInTheDocument();
     expect(flatmateNames()).toEqual(["MiaYou", "LeaNot joined yetRemove"]);
     expect(screen.queryByRole("button", { name: "Remove Mia" })).not.toBeInTheDocument();
+  });
+
+  it("adds a flatmate in a new row and waits for the name before offering another", async () => {
+    render(<App />);
+    await createHousehold();
+
+    fireEvent.click(screen.getByRole("button", { name: "+ Add a flatmate" }));
+    expect(screen.getByRole("button", { name: "+ Add a flatmate" })).toBeDisabled();
+    type("New flatmate's name", "Lea");
+    fireEvent.click(screen.getByRole("button", { name: "Add" }));
+
+    expect(await screen.findByText("Lea")).toBeInTheDocument();
+    expect(screen.queryByLabelText("New flatmate's name")).not.toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "+ Add a flatmate" })).toBeEnabled();
   });
 
   it("explains why a flatmate could not be added", async () => {

@@ -2,7 +2,7 @@ import { useEffect, useState, type ReactNode } from "react";
 import type { Household, Member } from "../api/households-api";
 import { Doorbell, DoorbellPlate } from "./Doorbell";
 import { InviteShareFeedback, useInviteShare } from "./InviteShare";
-import { NameForm } from "./NameForm";
+import { AddFlatmateRows } from "./AddFlatmateRows";
 
 export const UNDO_TIMEOUT_MS = 6000;
 
@@ -95,15 +95,7 @@ export function HouseholdView({
                 </DoorbellPlate>
               );
             })}
-            <li className="doorbell__add">
-              <NameForm
-                label="Add a flatmate"
-                placeholder="+ Add a flatmate"
-                submitLabel="Add"
-                variant="inline"
-                onSubmit={onAddMember}
-              />
-            </li>
+          <AddFlatmateRows onAdd={onAddMember} />
           </Doorbell>
         </section>
       </div>
