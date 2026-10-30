@@ -1,3 +1,4 @@
+import type { Expense, NewExpense } from "../api/expenses-api";
 import type { Household } from "../api/households-api";
 
 function json(status: number, body: unknown) {
@@ -6,10 +7,50 @@ function json(status: number, body: unknown) {
 
 const INVITE_NOT_FOUND = { error: "INVITE_NOT_FOUND", message: "This invite link doesn't work." };
 
-// Mirrors the API's household, invite and session rules closely enough for UI tests.
+// Mirrors the API's household, invite, session and expense rules closely enough for UI tests.
 export function createFakeHouseholdsServer() {
   const households = new Map<string, Omit<Household, "currentMemberId">>();
   const memberIdsByToken = new Map<string, string>();
+  const expensesByHouseholdId = new Map<string, Expense[]>();
+
+  function moneyOf(household: Omit<Household, "currentMemberId">) {
+    const expenses = expensesByHouseholdId.get(household.id) ?? [];
+    const balances = household.members.map((member) => ({
+      memberId: member.id,
+      balanceCents: expenses.reduce(
+        (sum, expense) =>
+          sum +
+          (expense.paidByMemberId === member.id ? expense.amountCents : 0) -
+          (expense.shares.find((share) => share.memberId === member.id)?.amountCents ?? 0),
+        0,
+      ),
+    }));
+    return { expenses, balances };
+  }
+
+  function addExpense(household: Omit<Household, "currentMemberId">, newExpense: NewExpense) {
+    const memberIds = household.members
+      .map((member) => member.id)
+      .filter((id) => newExpense.splitBetweenMemberIds.includes(id));
+    const baseShare = Math.floor(newExpense.amountCents / memberIds.length);
+    const remainder = newExpense.amountCents % memberIds.length;
+    const expense: Expense = {
+      id: crypto.randomUUID(),
+      description: newExpense.description.trim(),
+      amountCents: newExpense.amountCents,
+      paidByMemberId: newExpense.paidByMemberId,
+      spentOn: newExpense.spentOn,
+      shares: memberIds.map((memberId, index) => ({
+        memberId,
+        amountCents: baseShare + (index < remainder ? 1 : 0),
+      })),
+    };
+    const expenses = [expense, ...(expensesByHouseholdId.get(household.id) ?? [])];
+    expensesByHouseholdId.set(
+      household.id,
+      expenses.sort((first, second) => second.spentOn.localeCompare(first.spentOn)),
+    );
+  }
 
   function householdOf(memberId: string) {
     return [...households.values()].find((household) =>
@@ -72,6 +113,20 @@ export function createFakeHouseholdsServer() {
       return json(401, { error: "UNAUTHORIZED", message: "Please join a household first." });
     }
     const view = () => ({ ...household, currentMemberId });
+
+    if (segments[1] === "expenses") {
+      if (method === "POST") {
+        addExpense(household, body);
+        return json(201, moneyOf(household));
+      }
+      if (method === "DELETE") {
+        expensesByHouseholdId.set(
+          household.id,
+          (expensesByHouseholdId.get(household.id) ?? []).filter((expense) => expense.id !== segments[2]),
+        );
+      }
+      return json(200, moneyOf(household));
+    }
 
     if (method === "POST") {
       if (household.members.some((member) => member.name.toLowerCase() === name.toLowerCase())) {

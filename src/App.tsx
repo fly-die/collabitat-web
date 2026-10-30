@@ -7,6 +7,8 @@ import { StartHouseholdScreen } from "./households/StartHouseholdScreen";
 import { WelcomeScreen } from "./households/WelcomeScreen";
 import { useHousehold } from "./households/useHousehold";
 import { InstallHint } from "./install/InstallHint";
+import { MoneyView } from "./money/MoneyView";
+import { Tab, TabBar } from "./navigation/TabBar";
 
 type EntryScreen = "welcome" | "start" | "paste-invite";
 
@@ -22,6 +24,7 @@ export function App() {
     removeMember,
   } = useHousehold();
   const [entryScreen, setEntryScreen] = useState<EntryScreen>("welcome");
+  const [currentTab, setCurrentTab] = useState<Tab>(Tab.Home);
 
   function startOwn() {
     startOwnHousehold();
@@ -29,7 +32,7 @@ export function App() {
   }
 
   return (
-    <main className="app">
+    <main className={`app${state.status === "ready" ? " app--with-tabs" : ""}`}>
       {state.status === "loading" && <p className="screen hint">Opening your household…</p>}
 
       {state.status === "unreachable" && (
@@ -62,7 +65,7 @@ export function App() {
         </div>
       )}
 
-      {state.status === "ready" && (
+      {state.status === "ready" && currentTab === Tab.Home && (
         <HouseholdView
           household={state.household}
           onAddMember={addMember}
@@ -70,6 +73,10 @@ export function App() {
           footer={<InstallHint />}
         />
       )}
+
+      {state.status === "ready" && currentTab === Tab.Money && <MoneyView household={state.household} />}
+
+      {state.status === "ready" && <TabBar currentTab={currentTab} onSelect={setCurrentTab} />}
     </main>
   );
 }

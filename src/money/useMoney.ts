@@ -1,0 +1,45 @@
+import { useEffect, useState } from "react";
+import type { ApiError } from "../api/client";
+import { expensesApi, type Money, type NewExpense } from "../api/expenses-api";
+
+type MoneyState =
+  | { status: "loading" }
+  | { status: "ready"; money: Money }
+  | { status: "unreachable"; message: string };
+
+export function useMoney() {
+  const [state, setState] = useState<MoneyState>({ status: "loading" });
+  const [loadAttempt, setLoadAttempt] = useState(0);
+
+  useEffect(() => {
+    let isCurrent = true;
+    expensesApi
+      .get()
+      .then((money) => {
+        if (isCurrent) {
+          setState({ status: "ready", money });
+        }
+      })
+      .catch((error: ApiError) => {
+        if (isCurrent) {
+          setState({ status: "unreachable", message: error.message });
+        }
+      });
+    return () => {
+      isCurrent = false;
+    };
+  }, [loadAttempt]);
+
+  const retry = () => {
+    setState({ status: "loading" });
+    setLoadAttempt((attempt) => attempt + 1);
+  };
+
+  const addExpense = async (expense: NewExpense) =>
+    setState({ status: "ready", money: await expensesApi.add(expense) });
+
+  const removeExpense = async (expenseId: string) =>
+    setState({ status: "ready", money: await expensesApi.remove(expenseId) });
+
+  return { state, retry, addExpense, removeExpense };
+}

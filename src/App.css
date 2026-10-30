@@ -492,6 +492,187 @@
   gap: var(--space-2);
 }
 
+/* Money */
+
+.page-title--owe {
+  color: var(--color-owe);
+}
+
+.money__add {
+  margin-top: var(--space-6);
+}
+
+.panel {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  border: 1px solid var(--color-line);
+  border-radius: var(--radius-panel);
+  background: var(--color-surface);
+  overflow: hidden;
+}
+
+.panel__row {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  min-height: 3.375rem;
+  padding: var(--space-2) var(--space-2) var(--space-2) var(--space-4);
+  border-bottom: 1px solid var(--color-divider);
+  font-weight: 700;
+}
+
+.panel__row:last-child {
+  border-bottom: 0;
+}
+
+.panel__row--owe {
+  color: var(--color-owe);
+}
+
+.expense__text {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.expense__description {
+  overflow-wrap: anywhere;
+}
+
+.expense__meta {
+  display: flex;
+  flex-wrap: wrap;
+  column-gap: var(--space-3);
+  color: var(--color-ink-muted);
+  font-size: var(--font-size-small);
+  font-weight: 400;
+}
+
+.expense__amount {
+  font-size: 1.125rem;
+}
+
+.expense__delete {
+  padding: 0 var(--space-3);
+  font-size: var(--font-size-small);
+}
+
+.empty-state {
+  margin: 0;
+  padding: var(--space-4);
+  border: 1px dashed var(--color-line);
+  border-radius: var(--radius-panel);
+  color: var(--color-ink-muted);
+}
+
+.text-input--amount {
+  max-width: 10rem;
+  font-size: 1.25rem;
+  font-weight: 700;
+}
+
+select.text-input {
+  appearance: none;
+  padding-right: var(--space-8);
+  background: var(--color-surface)
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%2317201C' stroke-width='2'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E")
+    no-repeat right var(--space-3) center / 1.25rem;
+}
+
+.split-picker {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+  margin: var(--space-4) 0 0;
+  padding: 0;
+  border: 0;
+}
+
+.split-picker legend {
+  margin-top: 0;
+  padding: 0;
+}
+
+.split-picker__option {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  min-height: var(--touch-target);
+  padding: 0 var(--space-4) 0 var(--space-3);
+  border: 1px solid var(--color-line);
+  border-radius: var(--radius-large);
+  background: var(--color-surface);
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.split-picker__option:has(input:checked) {
+  border-color: var(--color-accent);
+  background: var(--color-accent-tint);
+}
+
+.split-picker__option input {
+  width: 1.125rem;
+  height: 1.125rem;
+  margin: 0;
+  accent-color: var(--color-accent);
+}
+
+/* Tab bar: thumb reach on phones, labels next to icons so nothing is a guess */
+
+.app--with-tabs .screen {
+  padding-bottom: calc(6rem + env(safe-area-inset-bottom));
+}
+
+.app--with-tabs .undo-bar {
+  bottom: calc(4.75rem + env(safe-area-inset-bottom));
+}
+
+.tab-bar {
+  position: fixed;
+  right: 0;
+  bottom: 0;
+  left: 0;
+  display: flex;
+  justify-content: center;
+  padding: 0 var(--space-4) env(safe-area-inset-bottom);
+  border-top: 1px solid var(--color-line);
+  background: var(--color-surface);
+}
+
+.tab-bar__tab {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0.125rem;
+  max-width: 8rem;
+  min-height: 3.75rem;
+  border: 0;
+  background: transparent;
+  color: var(--color-ink-muted);
+  font: inherit;
+  font-size: var(--font-size-small);
+  cursor: pointer;
+}
+
+.tab-bar__tab[aria-current="page"] {
+  color: var(--color-accent);
+  font-weight: 700;
+}
+
+.tab-bar__icon {
+  width: 1.5rem;
+  height: 1.5rem;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.8;
+  stroke-linejoin: round;
+}
+
 /* Computers: same screens, laid out for a wide window. Phones never reach this. */
 
 @media (min-width: 56rem) {
