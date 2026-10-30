@@ -1,8 +1,10 @@
 import { useEffect, useState } from "react";
+import { NewAccountForm } from "../accounts/NewAccountForm";
 import type { ApiError } from "../api/client";
 import {
   INVITE_NOT_FOUND_CODE,
   householdsApi,
+  type Credentials,
   type Household,
   type Invite,
 } from "../api/households-api";
@@ -13,6 +15,13 @@ interface JoinScreenProps {
   inviteCode: string;
   onJoined: (household: Household) => void;
   onStartOwnHousehold: () => void;
+  onLogIn: () => void;
+}
+
+// Either a flatmate someone already added, or a new name.
+interface Identity {
+  name: string;
+  memberId?: string;
 }
 
 type InviteState =
@@ -20,10 +29,10 @@ type InviteState =
   | { status: "ready"; invite: Invite }
   | { status: "failed"; error: ApiError };
 
-export function JoinScreen({ inviteCode, onJoined, onStartOwnHousehold }: JoinScreenProps) {
+export function JoinScreen({ inviteCode, onJoined, onStartOwnHousehold, onLogIn }: JoinScreenProps) {
   const [inviteState, setInviteState] = useState<InviteState>({ status: "loading" });
   const [loadAttempt, setLoadAttempt] = useState(0);
-  const [joinError, setJoinError] = useState<string>();
+  const [identity, setIdentity] = useState<Identity>();
 
   useEffect(() => {
     let isCurrent = true;
@@ -36,17 +45,15 @@ export function JoinScreen({ inviteCode, onJoined, onStartOwnHousehold }: JoinSc
     };
   }, [inviteCode, loadAttempt]);
 
-  async function joinAs(memberId: string) {
-    setJoinError(undefined);
-    try {
-      onJoined(await householdsApi.joinAsExistingMember(inviteCode, memberId));
-    } catch (error) {
-      setJoinError((error as ApiError).message);
+  async function join(credentials: Credentials) {
+    if (!identity) {
+      return;
     }
-  }
-
-  async function joinAsNewMember(name: string) {
-    onJoined(await householdsApi.joinAsNewMember(inviteCode, name));
+    onJoined(
+      identity.memberId
+        ? await householdsApi.joinAsExistingMember(inviteCode, identity.memberId, credentials)
+        : await householdsApi.joinAsNewMember(inviteCode, identity.name, credentials),
+    );
   }
 
   if (inviteState.status === "loading") {
@@ -75,6 +82,21 @@ export function JoinScreen({ inviteCode, onJoined, onStartOwnHousehold }: JoinSc
   }
 
   const { householdName, membersToJoin } = inviteState.invite;
+  if (identity) {
+    return (
+      <>
+        <button className="back-link" type="button" onClick={() => setIdentity(undefined)}>
+          Not {identity.name}?
+        </button>
+        <h1 className="page-title">
+          Join {householdName} as {identity.name}
+        </h1>
+        <p className="intro">Your email and password let you log in on any device.</p>
+        <NewAccountForm submitLabel="Join" onSubmit={join} />
+      </>
+    );
+  }
+
   return (
     <>
       <h1 className="page-title">Join {householdName}</h1>
@@ -84,24 +106,29 @@ export function JoinScreen({ inviteCode, onJoined, onStartOwnHousehold }: JoinSc
           <p className="intro">Which one are you?</p>
           <Doorbell label="Flatmates who have not joined yet">
             {membersToJoin.map((member) => (
-              <DoorbellPlate key={member.id} hasJoined={false} onRing={() => joinAs(member.id)}>
+              <DoorbellPlate
+                key={member.id}
+                hasJoined={false}
+                onRing={() => setIdentity({ name: member.name, memberId: member.id })}
+              >
                 {member.name}
               </DoorbellPlate>
             ))}
           </Doorbell>
-          {joinError && (
-            <p className="form-error" role="alert">
-              {joinError}
-            </p>
-          )}
         </>
       )}
       <NameForm
         label={membersToJoin.length > 0 ? "Not on the list? Your name" : "Your name"}
         placeholder="How your flatmates call you"
-        submitLabel="Join"
-        onSubmit={joinAsNewMember}
+        submitLabel="Continue"
+        onSubmit={async (name) => setIdentity({ name: name.trim() })}
       />
+      <p className="account-hint">
+        Already have an account?{" "}
+        <button className="link-button" type="button" onClick={onLogIn}>
+          Log in
+        </button>
+      </p>
     </>
   );
 }

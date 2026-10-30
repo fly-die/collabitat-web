@@ -6,11 +6,12 @@ import { PasteInviteScreen } from "./households/PasteInviteScreen";
 import { StartHouseholdScreen } from "./households/StartHouseholdScreen";
 import { WelcomeScreen } from "./households/WelcomeScreen";
 import { useHousehold } from "./households/useHousehold";
+import { LoginScreen } from "./accounts/LoginScreen";
 import { InstallHint } from "./install/InstallHint";
 import { MoneyView } from "./money/MoneyView";
 import { Tab, TabBar } from "./navigation/TabBar";
 
-type EntryScreen = "welcome" | "start" | "paste-invite";
+type EntryScreen = "welcome" | "start" | "paste-invite" | "log-in";
 
 export function App() {
   const {
@@ -20,6 +21,8 @@ export function App() {
     openInvite,
     startOwnHousehold,
     createHousehold,
+    logIn,
+    logOut,
     addMember,
     removeMember,
   } = useHousehold();
@@ -29,6 +32,17 @@ export function App() {
   function startOwn() {
     startOwnHousehold();
     setEntryScreen("start");
+  }
+
+  function logInInstead() {
+    startOwnHousehold();
+    setEntryScreen("log-in");
+  }
+
+  async function logOutToWelcome() {
+    setEntryScreen("welcome");
+    setCurrentTab(Tab.Home);
+    await logOut();
   }
 
   return (
@@ -48,7 +62,12 @@ export function App() {
         <WelcomeScreen
           onStartHousehold={() => setEntryScreen("start")}
           onJoinWithLink={() => setEntryScreen("paste-invite")}
+          onLogIn={() => setEntryScreen("log-in")}
         />
+      )}
+
+      {state.status === "none" && entryScreen === "log-in" && (
+        <LoginScreen onLogIn={logIn} onBack={() => setEntryScreen("welcome")} />
       )}
 
       {state.status === "none" && entryScreen === "start" && (
@@ -61,7 +80,12 @@ export function App() {
 
       {state.status === "joining" && (
         <div className="screen">
-          <JoinScreen inviteCode={state.inviteCode} onJoined={showHousehold} onStartOwnHousehold={startOwn} />
+          <JoinScreen
+            inviteCode={state.inviteCode}
+            onJoined={showHousehold}
+            onStartOwnHousehold={startOwn}
+            onLogIn={logInInstead}
+          />
         </div>
       )}
 
@@ -70,6 +94,7 @@ export function App() {
           household={state.household}
           onAddMember={addMember}
           onRemoveMember={removeMember}
+          onLogOut={logOutToWelcome}
           footer={<InstallHint />}
         />
       )}

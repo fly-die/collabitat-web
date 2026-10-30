@@ -1,4 +1,4 @@
-import { ApiError, SESSION_STORAGE_KEY, UNAUTHORIZED_CODE, request, safeId } from "./client";
+import { ApiError, SESSION_STORAGE_KEY, UNAUTHORIZED_CODE, endSession, request, safeId } from "./client";
 
 export interface Member {
   id: string;
@@ -11,7 +11,13 @@ export interface Household {
   name: string;
   inviteCode: string;
   currentMemberId: string;
+  currentMemberHasAccount: boolean;
   members: Member[];
+}
+
+export interface Credentials {
+  email: string;
+  password: string;
 }
 
 export interface Invite {
@@ -55,16 +61,27 @@ function invitePath(inviteCode: string) {
 }
 
 export const householdsApi = {
-  create: (name: string, memberName: string) =>
-    startSession("/households", { body: JSON.stringify({ name, memberName }) }),
+  create: (name: string, memberName: string, credentials: Credentials) =>
+    startSession("/households", { body: JSON.stringify({ name, memberName, ...credentials }) }),
+  logIn: (credentials: Credentials) => startSession("/sessions", { body: JSON.stringify(credentials) }),
+  // Forgets the session here even when the server can't be reached.
+  logOut: async () => {
+    try {
+      await request("/session", { method: "DELETE" });
+    } finally {
+      endSession();
+    }
+  },
   get: () => request<Household>("/household"),
   addMember: (name: string) =>
     request<Household>("/household/members", { method: "POST", body: JSON.stringify({ name }) }),
   removeMember: (memberId: string) =>
     request<Household>(`/household/members/${safeMemberId(memberId)}`, { method: "DELETE" }),
   getInvite: async (inviteCode: string) => request<Invite>(invitePath(inviteCode)),
-  joinAsNewMember: async (inviteCode: string, name: string) =>
-    startSession(`${invitePath(inviteCode)}/members`, { body: JSON.stringify({ name }) }),
-  joinAsExistingMember: async (inviteCode: string, memberId: string) =>
-    startSession(`${invitePath(inviteCode)}/members/${safeMemberId(memberId)}/join`, {}),
+  joinAsNewMember: async (inviteCode: string, name: string, credentials: Credentials) =>
+    startSession(`${invitePath(inviteCode)}/members`, { body: JSON.stringify({ name, ...credentials }) }),
+  joinAsExistingMember: async (inviteCode: string, memberId: string, credentials: Credentials) =>
+    startSession(`${invitePath(inviteCode)}/members/${safeMemberId(memberId)}/join`, {
+      body: JSON.stringify(credentials),
+    }),
 };

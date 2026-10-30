@@ -1,11 +1,12 @@
 interface WelcomeScreenProps {
   onStartHousehold: () => void;
   onJoinWithLink: () => void;
+  onLogIn: () => void;
 }
 
 const AREAS = ["Costs", "Chores", "Meals"];
 
-export function WelcomeScreen({ onStartHousehold, onJoinWithLink }: WelcomeScreenProps) {
+export function WelcomeScreen({ onStartHousehold, onJoinWithLink, onLogIn }: WelcomeScreenProps) {
   return (
     <div className="welcome">
       <header className="welcome__block">
@@ -35,6 +36,12 @@ export function WelcomeScreen({ onStartHousehold, onJoinWithLink }: WelcomeScree
           <button className="button button--block button--outline" type="button" onClick={onJoinWithLink}>
             Join with an invite link
           </button>
+          <p className="account-hint">
+            Already have an account?{" "}
+            <button className="link-button" type="button" onClick={onLogIn}>
+              Log in
+            </button>
+          </p>
         </div>
       </div>
     </div>

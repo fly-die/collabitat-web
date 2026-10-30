@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { UNAUTHORIZED_CODE, endSession, hasSession, type ApiError } from "../api/client";
-import { householdsApi, type Household } from "../api/households-api";
+import { householdsApi, type Credentials, type Household } from "../api/households-api";
 import { clearInviteFromLocation, inviteCodeFromLocation } from "./invite-link";
 
 const LEGACY_HOUSEHOLD_ID_KEY = "collabitat.householdId";
@@ -76,8 +76,19 @@ export function useHousehold() {
     setState({ status: "none" });
   };
 
-  const createHousehold = async (name: string, memberName: string) =>
-    showHousehold(await householdsApi.create(name, memberName));
+  const createHousehold = async (name: string, memberName: string, credentials: Credentials) =>
+    showHousehold(await householdsApi.create(name, memberName, credentials));
+
+  const logIn = async (credentials: Credentials) => showHousehold(await householdsApi.logIn(credentials));
+
+  const logOut = async () => {
+    try {
+      await householdsApi.logOut();
+    } finally {
+      setState({ status: "none" });
+    }
+  };
+
 
   const addMember = async (name: string) => showHousehold(await householdsApi.addMember(name));
 
@@ -91,6 +102,8 @@ export function useHousehold() {
     openInvite,
     startOwnHousehold,
     createHousehold,
+    logIn,
+    logOut,
     addMember,
     removeMember,
   };

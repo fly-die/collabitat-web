@@ -13,6 +13,8 @@ async function createHousehold(name = "Langstrasse 12", memberName = "Mia") {
   fireEvent.click(await screen.findByRole("button", { name: "Start a household" }));
   type("Household name", name);
   type("Your name", memberName);
+  type("Email", `${memberName.toLowerCase()}@example.com`);
+  type("Password", TEST_PASSWORD);
   fireEvent.click(screen.getByRole("button", { name: "Create household" }));
   await screen.findByRole("heading", { level: 1, name });
 }
@@ -21,6 +23,14 @@ async function addFlatmate(name: string) {
   fireEvent.click(screen.getByRole("button", { name: "+ Add a flatmate" }));
   type("New flatmate's name", name);
   fireEvent.click(screen.getByRole("button", { name: "Add" }));
+}
+
+const TEST_PASSWORD = "correct horse battery";
+
+function enterNewAccount(email: string) {
+  type("Email", email);
+  type("Password", TEST_PASSWORD);
+  fireEvent.click(screen.getByRole("button", { name: "Join" }));
 }
 
 function flatmateNames() {
@@ -169,6 +179,7 @@ describe("household", () => {
     openInviteLink([...server.households.values()][0].inviteCode);
     render(<App />);
     fireEvent.click(await screen.findByRole("button", { name: "Lea" }));
+    enterNewAccount("lea@example.com");
 
     await screen.findByRole("heading", { level: 1, name: "Langstrasse 12" });
     expect(screen.queryByRole("heading", { name: "Getting started" })).not.toBeInTheDocument();
@@ -190,6 +201,8 @@ describe("household", () => {
       render(<App />);
 
       fireEvent.click(await screen.findByRole("button", { name: "Lea" }));
+      expect(screen.getByRole("heading", { name: "Join Langstrasse 12 as Lea" })).toBeInTheDocument();
+      enterNewAccount("lea@example.com");
 
       expect(await screen.findByRole("heading", { level: 1, name: "Langstrasse 12" })).toBeInTheDocument();
       expect(flatmateNames()).toContain("LeaYou");
@@ -202,7 +215,8 @@ describe("household", () => {
       await screen.findByRole("heading", { name: "Join Langstrasse 12" });
 
       type("Not on the list? Your name", "Noah");
-      fireEvent.click(screen.getByRole("button", { name: "Join" }));
+      fireEvent.click(screen.getByRole("button", { name: "Continue" }));
+      enterNewAccount("noah@example.com");
 
       await screen.findByRole("heading", { level: 1, name: "Langstrasse 12" });
       expect(flatmateNames()).toContain("NoahYou");

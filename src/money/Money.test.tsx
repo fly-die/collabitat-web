@@ -13,6 +13,8 @@ async function openMoneyWithLea() {
   fireEvent.click(await screen.findByRole("button", { name: "Start a household" }));
   type("Household name", "Langstrasse 12");
   type("Your name", "Mia");
+  type("Email", "mia@example.com");
+  type("Password", "correct horse battery");
   fireEvent.click(screen.getByRole("button", { name: "Create household" }));
   fireEvent.click(await screen.findByRole("button", { name: "+ Add a flatmate" }));
   type("New flatmate's name", "Lea");

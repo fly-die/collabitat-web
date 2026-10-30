@@ -1,26 +1,28 @@
 import { useId, useState, type FormEvent } from "react";
+import { AccountFields, EMPTY_CREDENTIALS, isFilledIn } from "../accounts/AccountFields";
 import type { ApiError } from "../api/client";
+import type { Credentials } from "../api/households-api";
 
 interface CreateHouseholdFormProps {
-  onSubmit: (name: string, memberName: string) => Promise<void>;
+  onSubmit: (name: string, memberName: string, credentials: Credentials) => Promise<void>;
 }
 
 export function CreateHouseholdForm({ onSubmit }: CreateHouseholdFormProps) {
   const householdNameId = useId();
   const memberNameId = useId();
-  const errorId = useId();
   const [householdName, setHouseholdName] = useState("");
   const [memberName, setMemberName] = useState("");
+  const [credentials, setCredentials] = useState(EMPTY_CREDENTIALS);
   const [error, setError] = useState<string>();
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const isComplete = householdName.trim() !== "" && memberName.trim() !== "";
+  const isComplete = householdName.trim() !== "" && memberName.trim() !== "" && isFilledIn(credentials);
 
   async function handleSubmit(event: FormEvent) {
     event.preventDefault();
     setIsSubmitting(true);
     setError(undefined);
     try {
-      await onSubmit(householdName, memberName);
+      await onSubmit(householdName, memberName, credentials);
     } catch (submitError) {
       setError((submitError as ApiError).message);
       setIsSubmitting(false);
@@ -49,11 +51,11 @@ export function CreateHouseholdForm({ onSubmit }: CreateHouseholdFormProps) {
         value={memberName}
         placeholder="How your flatmates call you"
         autoComplete="given-name"
-        aria-describedby={error ? errorId : undefined}
         onChange={(event) => setMemberName(event.target.value)}
       />
+      <AccountFields credentials={credentials} onChange={setCredentials} isNewAccount />
       {error && (
-        <p id={errorId} className="form-error" role="alert">
+        <p className="form-error" role="alert">
           {error}
         </p>
       )}

@@ -11,6 +11,7 @@ interface HouseholdViewProps {
   household: Household;
   onAddMember: (name: string) => Promise<void>;
   onRemoveMember: (memberId: string) => Promise<void>;
+  onLogOut: () => void;
   footer?: ReactNode;
 }
 
@@ -28,6 +29,7 @@ export function HouseholdView({
   household,
   onAddMember,
   onRemoveMember,
+  onLogOut,
   footer,
 }: HouseholdViewProps) {
   const [removedMember, setRemovedMember] = useState<Member>();
@@ -164,6 +166,11 @@ export function HouseholdView({
           </div>
         )}
         {footer}
+        {household.currentMemberHasAccount && (
+          <button className="link-button log-out" type="button" onClick={onLogOut}>
+            Log out
+          </button>
+        )}
       </div>
 
       {removedMember && (
