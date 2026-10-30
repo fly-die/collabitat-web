@@ -1,5 +1,5 @@
 import { useId, useState, type FormEvent } from "react";
-import type { ApiError } from "../api/households-api";
+import type { ApiError } from "../api/client";
 
 interface NameFormProps {
   label: string;

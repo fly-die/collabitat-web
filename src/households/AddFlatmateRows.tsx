@@ -1,5 +1,5 @@
 import { useId, useState, type FormEvent, type KeyboardEvent } from "react";
-import type { ApiError } from "../api/households-api";
+import type { ApiError } from "../api/client";
 
 interface AddFlatmateRowsProps {
   onAdd: (name: string) => Promise<void>;

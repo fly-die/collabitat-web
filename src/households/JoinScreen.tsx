@@ -1,8 +1,8 @@
 import { useEffect, useState } from "react";
+import type { ApiError } from "../api/client";
 import {
   INVITE_NOT_FOUND_CODE,
   householdsApi,
-  type ApiError,
   type Household,
   type Invite,
 } from "../api/households-api";

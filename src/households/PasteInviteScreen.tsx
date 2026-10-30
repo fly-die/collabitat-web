@@ -1,4 +1,5 @@
-import { ApiError, INVITE_NOT_FOUND_CODE } from "../api/households-api";
+import { ApiError } from "../api/client";
+import { INVITE_NOT_FOUND_CODE } from "../api/households-api";
 import { inviteCodeFromText } from "./invite-link";
 import { NameForm } from "./NameForm";
 

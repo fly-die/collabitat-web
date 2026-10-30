@@ -1,12 +1,6 @@
 import { useEffect, useState } from "react";
-import {
-  UNAUTHORIZED_CODE,
-  endSession,
-  hasSession,
-  householdsApi,
-  type ApiError,
-  type Household,
-} from "../api/households-api";
+import { UNAUTHORIZED_CODE, endSession, hasSession, type ApiError } from "../api/client";
+import { householdsApi, type Household } from "../api/households-api";
 import { clearInviteFromLocation, inviteCodeFromLocation } from "./invite-link";
 
 const LEGACY_HOUSEHOLD_ID_KEY = "collabitat.householdId";

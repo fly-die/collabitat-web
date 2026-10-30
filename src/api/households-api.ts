@@ -1,4 +1,4 @@
-import { API_BASE_URL } from "../config";
+import { ApiError, SESSION_STORAGE_KEY, UNAUTHORIZED_CODE, request, safeId } from "./client";
 
 export interface Member {
   id: string;
@@ -25,55 +25,10 @@ interface SessionResponse {
   household: Household;
 }
 
-export const SESSION_STORAGE_KEY = "collabitat.session";
-export const NETWORK_ERROR_CODE = "NETWORK_ERROR";
-export const UNAUTHORIZED_CODE = "UNAUTHORIZED";
 export const INVITE_NOT_FOUND_CODE = "INVITE_NOT_FOUND";
 const MEMBER_NOT_FOUND_CODE = "MEMBER_NOT_FOUND";
-
-export class ApiError extends Error {
-  constructor(
-    readonly code: string,
-    message: string,
-  ) {
-    super(message);
-    this.name = "ApiError";
-  }
-}
-
-export function hasSession() {
-  return localStorage.getItem(SESSION_STORAGE_KEY) !== null;
-}
-
-export function endSession() {
-  localStorage.removeItem(SESSION_STORAGE_KEY);
-}
-
-async function request<T>(path: string, init?: RequestInit): Promise<T> {
-  const headers = new Headers();
-  if (init?.body) {
-    headers.set("Content-Type", "application/json");
-  }
-  const token = localStorage.getItem(SESSION_STORAGE_KEY);
-  if (token) {
-    headers.set("Authorization", `Bearer ${token}`);
-  }
-
-  let response: Response;
-  try {
-    response = await fetch(`${API_BASE_URL}${path}`, { ...init, headers });
-  } catch {
-    throw new ApiError(NETWORK_ERROR_CODE, "Can't reach the server. Try again in a moment.");
-  }
-
-  const body = await response.json();
-  if (!response.ok) {
-    throw new ApiError(body.error ?? "UNKNOWN", body.message ?? "Something went wrong.");
-  }
-  return body as T;
-}
-
 const SESSION_TOKEN_PATTERN = /^[A-Za-z0-9_-]{43}$/;
+const INVITE_CODE_PATTERN = /^[0-9a-f]{32}$/;
 
 async function startSession(path: string, init: RequestInit) {
   const { token, household } = await request<SessionResponse>(path, { method: "POST", ...init });
@@ -85,15 +40,8 @@ async function startSession(path: string, init: RequestInit) {
   return household;
 }
 
-const UUID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
-const INVITE_CODE_PATTERN = /^[0-9a-f]{32}$/;
-
-// Values from links and server responses only reach a URL in their expected shape.
 function safeMemberId(memberId: string) {
-  if (!UUID_PATTERN.test(memberId)) {
-    throw new ApiError(MEMBER_NOT_FOUND_CODE, "That flatmate no longer exists.");
-  }
-  return memberId;
+  return safeId(memberId, MEMBER_NOT_FOUND_CODE, "That flatmate no longer exists.");
 }
 
 function invitePath(inviteCode: string) {
