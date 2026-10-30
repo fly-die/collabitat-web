@@ -120,4 +120,17 @@ describe("money", () => {
     act(() => vi.advanceTimersByTime(UNDO_TIMEOUT_MS));
     expect(screen.queryByRole("button", { name: "Undo" })).not.toBeInTheDocument();
   });
+
+  it("keeps a flatmate who is part of an expense and says why", async () => {
+    await openMoneyWithLea();
+    await addExpense("Groceries", "30");
+
+    fireEvent.click(screen.getByRole("button", { name: "Home" }));
+    fireEvent.click(await screen.findByRole("button", { name: "Remove Lea" }));
+
+    expect(await screen.findByRole("alert")).toHaveTextContent(
+      "Lea is part of some expenses, so they stay in the household.",
+    );
+    expect(screen.getByText("Lea")).toBeInTheDocument();
+  });
 });

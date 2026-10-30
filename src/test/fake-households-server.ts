@@ -135,6 +135,17 @@ export function createFakeHouseholdsServer() {
       addMember(household, name, false);
       return json(201, view());
     }
+    const isInExpenses = (expensesByHouseholdId.get(household.id) ?? []).some(
+      (expense) =>
+        expense.paidByMemberId === segments[2] || expense.shares.some((share) => share.memberId === segments[2]),
+    );
+    if (method === "DELETE" && isInExpenses) {
+      const member = household.members.find((candidate) => candidate.id === segments[2]);
+      return json(409, {
+        error: "MEMBER_HAS_EXPENSES",
+        message: `${member?.name} is part of some expenses, so they stay in the household.`,
+      });
+    }
     if (method === "DELETE") {
       household.members = household.members.filter((member) => member.id !== segments[2]);
     }

@@ -1,4 +1,5 @@
 import { useEffect, useState, type ReactNode } from "react";
+import type { ApiError } from "../api/client";
 import type { Household, Member } from "../api/households-api";
 import { Doorbell, DoorbellPlate } from "./Doorbell";
 import { InviteShareFeedback, useInviteShare } from "./InviteShare";
@@ -30,6 +31,7 @@ export function HouseholdView({
   footer,
 }: HouseholdViewProps) {
   const [removedMember, setRemovedMember] = useState<Member>();
+  const [removeError, setRemoveError] = useState<string>();
   const invite = useInviteShare(household.name, household.inviteCode);
   const openStep = nextStepTitle(household);
 
@@ -45,8 +47,13 @@ export function HouseholdView({
   }, [removedMember]);
 
   async function removeMember(member: Member) {
-    await onRemoveMember(member.id);
-    setRemovedMember(member);
+    setRemoveError(undefined);
+    try {
+      await onRemoveMember(member.id);
+      setRemovedMember(member);
+    } catch (error) {
+      setRemoveError((error as ApiError).message);
+    }
   }
 
   async function undoRemoval() {
@@ -95,8 +102,13 @@ export function HouseholdView({
                 </DoorbellPlate>
               );
             })}
-          <AddFlatmateRows onAdd={onAddMember} />
+            <AddFlatmateRows onAdd={onAddMember} />
           </Doorbell>
+          {removeError && (
+            <p className="form-error" role="alert">
+              {removeError}
+            </p>
+          )}
         </section>
       </div>
 
