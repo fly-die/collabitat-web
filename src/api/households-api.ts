@@ -72,6 +72,8 @@ export const householdsApi = {
       endSession();
     }
   },
+  addAccount: (credentials: Credentials) =>
+    request<Household>("/household/account", { method: "POST", body: JSON.stringify(credentials) }),
   get: () => request<Household>("/household"),
   addMember: (name: string) =>
     request<Household>("/household/members", { method: "POST", body: JSON.stringify({ name }) }),

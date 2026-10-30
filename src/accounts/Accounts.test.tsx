@@ -90,6 +90,20 @@ describe("accounts", () => {
     expect(localStorage.getItem(SESSION_STORAGE_KEY)).toBeNull();
   });
 
+  it("asks a flatmate from before accounts to add an email, once", async () => {
+    localStorage.setItem(SESSION_STORAGE_KEY, server.startSessionWithoutAccount("Langstrasse 12", "Mia"));
+    render(<App />);
+
+    expect(await screen.findByRole("heading", { name: "Add your email to log in anywhere" })).toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "Log out" })).not.toBeInTheDocument();
+    type("Email", "mia@example.com");
+    type("Password", PASSWORD);
+    fireEvent.click(screen.getByRole("button", { name: "Save account" }));
+
+    expect(await screen.findByRole("button", { name: "Log out" })).toBeInTheDocument();
+    expect(screen.queryByRole("heading", { name: "Add your email to log in anywhere" })).not.toBeInTheDocument();
+  });
+
   it("lets me log in instead when an invite opens on a new device", async () => {
     const { unmount } = render(<App />);
     await startHousehold();

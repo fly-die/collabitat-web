@@ -171,6 +171,15 @@ export function createFakeHouseholdsServer() {
       memberIdsByToken.delete(token);
       return json(200, { loggedOut: true });
     }
+    if (method === "POST" && pathname === "/household/account") {
+      const problem = accountProblem(body);
+      if (problem) {
+        return problem;
+      }
+      addAccount(body, currentMemberId);
+      return json(201, view());
+    }
+
     if (segments[1] === "expenses") {
       if (method === "POST") {
         addExpense(household, body);
@@ -209,5 +218,14 @@ export function createFakeHouseholdsServer() {
     return json(200, view());
   }
 
-  return { households, handle };
+  // Stands in for a flatmate who joined before accounts existed.
+  function startSessionWithoutAccount(householdName: string, memberName: string) {
+    const household = { id: crypto.randomUUID(), name: householdName, inviteCode: "b".repeat(32), members: [] };
+    households.set(household.id, household);
+    const token = `${crypto.randomUUID().replaceAll("-", "")}${"t".repeat(11)}`;
+    memberIdsByToken.set(token, addMember(household, memberName, true).id);
+    return token;
+  }
+
+  return { households, handle, startSessionWithoutAccount };
 }

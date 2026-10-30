@@ -23,6 +23,7 @@ export function App() {
     createHousehold,
     logIn,
     logOut,
+    addAccount,
     addMember,
     removeMember,
   } = useHousehold();
@@ -94,6 +95,7 @@ export function App() {
           household={state.household}
           onAddMember={addMember}
           onRemoveMember={removeMember}
+          onAddAccount={addAccount}
           onLogOut={logOutToWelcome}
           footer={<InstallHint />}
         />

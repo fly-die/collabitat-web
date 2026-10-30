@@ -89,6 +89,8 @@ export function useHousehold() {
     }
   };
 
+  const addAccount = async (credentials: Credentials) =>
+    showHousehold(await householdsApi.addAccount(credentials));
 
   const addMember = async (name: string) => showHousehold(await householdsApi.addMember(name));
 
@@ -104,6 +106,7 @@ export function useHousehold() {
     createHousehold,
     logIn,
     logOut,
+    addAccount,
     addMember,
     removeMember,
   };

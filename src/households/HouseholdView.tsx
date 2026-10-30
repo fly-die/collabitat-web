@@ -1,6 +1,7 @@
 import { useEffect, useState, type ReactNode } from "react";
+import { NewAccountForm } from "../accounts/NewAccountForm";
 import type { ApiError } from "../api/client";
-import type { Household, Member } from "../api/households-api";
+import type { Credentials, Household, Member } from "../api/households-api";
 import { Doorbell, DoorbellPlate } from "./Doorbell";
 import { InviteShareFeedback, useInviteShare } from "./InviteShare";
 import { AddFlatmateRows } from "./AddFlatmateRows";
@@ -11,6 +12,7 @@ interface HouseholdViewProps {
   household: Household;
   onAddMember: (name: string) => Promise<void>;
   onRemoveMember: (memberId: string) => Promise<void>;
+  onAddAccount: (credentials: Credentials) => Promise<void>;
   onLogOut: () => void;
   footer?: ReactNode;
 }
@@ -29,6 +31,7 @@ export function HouseholdView({
   household,
   onAddMember,
   onRemoveMember,
+  onAddAccount,
   onLogOut,
   footer,
 }: HouseholdViewProps) {
@@ -115,6 +118,15 @@ export function HouseholdView({
       </div>
 
       <div className="household__aside">
+        {!household.currentMemberHasAccount && (
+          <section className="account-card" aria-labelledby="account-card-heading">
+            <h2 id="account-card-heading" className="section-title">
+              Add your email to log in anywhere
+            </h2>
+            <p className="hint">Right now only this browser knows you. With an account you can open your household on any device.</p>
+            <NewAccountForm submitLabel="Save account" onSubmit={onAddAccount} />
+          </section>
+        )}
         {openStep ? (
           <section
             className="getting-started"
