@@ -2,7 +2,7 @@ import { act, fireEvent, render, screen, within } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { App } from "./App";
 import { SESSION_STORAGE_KEY } from "./api/client";
-import { UNDO_TIMEOUT_MS } from "./households/HouseholdView";
+import { UNDO_TIMEOUT_MS } from "./components/UndoBar";
 import { createFakeHouseholdsServer } from "./test/fake-households-server";
 
 function type(label: string, value: string) {

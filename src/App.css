@@ -149,6 +149,13 @@
   font: inherit;
   font-weight: 700;
   cursor: pointer;
+  transition:
+    transform var(--motion-quick) var(--ease-out),
+    background-color var(--motion-quick) ease;
+}
+
+.button:active:not(:disabled) {
+  transform: scale(0.98);
 }
 
 .button:disabled {
@@ -472,6 +479,42 @@
   border-radius: var(--radius-large);
   background: var(--color-ink);
   color: var(--color-surface);
+  overflow: hidden;
+  animation: rise-in var(--motion-calm) var(--ease-out);
+}
+
+/* Burns down while Undo is still available. */
+.undo-bar__fuse {
+  position: absolute;
+  right: 0;
+  bottom: 0;
+  left: 0;
+  height: 3px;
+  background: var(--color-accent-tint);
+  transform-origin: left center;
+  animation: fuse-burn var(--undo-duration) linear forwards;
+}
+
+@keyframes fuse-burn {
+  from {
+    transform: scaleX(1);
+  }
+
+  to {
+    transform: scaleX(0);
+  }
+}
+
+@keyframes rise-in {
+  from {
+    opacity: 0;
+    transform: translateY(0.5rem);
+  }
+
+  to {
+    opacity: 1;
+    transform: none;
+  }
 }
 
 /* Install */
@@ -692,6 +735,30 @@ select.text-input {
   accent-color: var(--color-accent);
 }
 
+.money__square {
+  margin: var(--space-2) 0 0;
+}
+
+.transfer__text {
+  flex: 1;
+  min-width: 0;
+}
+
+.transfer__action {
+  min-height: 2.5rem;
+  padding: 0 var(--space-3);
+  font-size: var(--font-size-small);
+  white-space: nowrap;
+}
+
+.expense--payment .expense__amount {
+  color: var(--color-accent);
+}
+
+.count-up {
+  font-variant-numeric: tabular-nums;
+}
+
 /* Tab bar: thumb reach on phones, labels next to icons so nothing is a guess */
 
 .app--with-tabs .screen {
@@ -736,9 +803,17 @@ select.text-input {
   font-weight: 700;
 }
 
+.tab-bar__tab[aria-current="page"] .tab-bar__icon {
+  background: var(--color-accent-tint);
+}
+
 .tab-bar__icon {
+  box-sizing: content-box;
   width: 1.5rem;
   height: 1.5rem;
+  padding: 0.125rem 1rem;
+  border-radius: 999px;
+  transition: background-color var(--motion-quick) ease;
   fill: none;
   stroke: currentColor;
   stroke-width: 1.8;
@@ -806,5 +881,33 @@ select.text-input {
 
   .household__aside {
     padding-top: 3.25rem;
+  }
+}
+
+/* Screens settle in gently instead of popping. */
+.screen,
+.household {
+  animation: settle-in var(--motion-calm) var(--ease-out);
+}
+
+@keyframes settle-in {
+  from {
+    opacity: 0;
+    transform: translateY(0.25rem);
+  }
+
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .screen,
+  .household,
+  .undo-bar,
+  .button {
+    animation: none;
+    transition: none;
   }
 }

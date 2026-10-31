@@ -1,12 +1,12 @@
 import { useEffect, useState, type ReactNode } from "react";
 import { NewAccountForm } from "../accounts/NewAccountForm";
+import { UNDO_TIMEOUT_MS, UndoBar } from "../components/UndoBar";
 import type { ApiError } from "../api/client";
 import type { Credentials, Household, Member } from "../api/households-api";
 import { Doorbell, DoorbellPlate } from "./Doorbell";
 import { InviteShareFeedback, useInviteShare } from "./InviteShare";
 import { AddFlatmateRows } from "./AddFlatmateRows";
 
-export const UNDO_TIMEOUT_MS = 6000;
 
 interface HouseholdViewProps {
   household: Household;
@@ -186,16 +186,7 @@ export function HouseholdView({
       </div>
 
       {removedMember && (
-        <div className="undo-bar" role="status">
-          <span>{removedMember.name} removed.</span>
-          <button
-            className="button button--on-dark"
-            type="button"
-            onClick={undoRemoval}
-          >
-            Undo
-          </button>
-        </div>
+        <UndoBar message={`${removedMember.name} removed.`} onUndo={undoRemoval} />
       )}
     </div>
   );

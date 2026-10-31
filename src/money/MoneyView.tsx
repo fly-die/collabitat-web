@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import type { ApiError } from "../api/client";
 import type { Expense, Money, NewExpense } from "../api/expenses-api";
 import type { Household } from "../api/households-api";
-import { UNDO_TIMEOUT_MS } from "../households/HouseholdView";
+import { UNDO_TIMEOUT_MS } from "../components/UndoBar";
 import { AddExpenseScreen } from "./AddExpenseScreen";
 import { describeBalance, formatAmount, formatDay } from "./money-format";
 import { useMoney } from "./useMoney";

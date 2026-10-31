@@ -9,6 +9,9 @@
   --color-divider: #e2e8e4;
   --color-done: #e4ebe6;
   --color-accent-tint: #e4efeb;
+  --motion-quick: 120ms;
+  --motion-calm: 220ms;
+  --ease-out: cubic-bezier(0.23, 1, 0.32, 1);
 
   --font-body: "Atkinson Hyperlegible", system-ui, sans-serif;
   --font-size-body: 1.0625rem;
