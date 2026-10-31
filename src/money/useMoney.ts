@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import type { ApiError } from "../api/client";
-import { expensesApi, type Money, type NewExpense } from "../api/expenses-api";
+import { expensesApi, type Money, type NewExpense, type NewSettlement } from "../api/expenses-api";
 
 type MoneyState =
   | { status: "loading" }
@@ -41,5 +41,15 @@ export function useMoney() {
   const removeExpense = async (expenseId: string) =>
     setState({ status: "ready", money: await expensesApi.remove(expenseId) });
 
-  return { state, retry, addExpense, removeExpense };
+  // Answers with the money view, so the caller can tell which payment is new.
+  const settle = async (settlement: NewSettlement) => {
+    const money = await expensesApi.settle(settlement);
+    setState({ status: "ready", money });
+    return money;
+  };
+
+  const removeSettlement = async (settlementId: string) =>
+    setState({ status: "ready", money: await expensesApi.removeSettlement(settlementId) });
+
+  return { state, retry, addExpense, removeExpense, settle, removeSettlement };
 }

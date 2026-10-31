@@ -1,4 +1,4 @@
-import type { Expense, NewExpense } from "../api/expenses-api";
+import type { Expense, NewExpense, Settlement, Transfer } from "../api/expenses-api";
 import type { Household } from "../api/households-api";
 
 type StoredHousehold = Omit<Household, "currentMemberId" | "currentMemberHasAccount">;
@@ -37,20 +37,53 @@ export function createFakeHouseholdsServer() {
     accountsByEmail.set(body.email.trim().toLowerCase(), { password: body.password, memberIds: [memberId] });
   }
   const expensesByHouseholdId = new Map<string, Expense[]>();
+  const settlementsByHouseholdId = new Map<string, Settlement[]>();
+  // Strictly increasing, so entries added within one millisecond still keep their order.
+  let createdCount = 0;
+  const nextCreatedAt = () => new Date(Date.UTC(2026, 0, 1) + (createdCount += 1)).toISOString();
+
+  // Same greedy rule as the API: the biggest debtor pays the biggest creditor until all are square.
+  function simplify(balances: { memberId: string; balanceCents: number }[]): Transfer[] {
+    const remaining = balances.map((balance) => ({ ...balance }));
+    const transfers: Transfer[] = [];
+    const pick = (sign: number) =>
+      remaining
+        .filter((entry) => sign * entry.balanceCents > 0)
+        .reduce<(typeof remaining)[number] | undefined>(
+          (best, entry) => (!best || sign * entry.balanceCents > sign * best.balanceCents ? entry : best),
+          undefined,
+        );
+    for (let debtor = pick(-1), creditor = pick(1); debtor && creditor; debtor = pick(-1), creditor = pick(1)) {
+      const amountCents = Math.min(-debtor.balanceCents, creditor.balanceCents);
+      transfers.push({ fromMemberId: debtor.memberId, toMemberId: creditor.memberId, amountCents });
+      debtor.balanceCents += amountCents;
+      creditor.balanceCents -= amountCents;
+    }
+    return transfers;
+  }
 
   function moneyOf(household: StoredHousehold) {
     const expenses = expensesByHouseholdId.get(household.id) ?? [];
+    const settlements = settlementsByHouseholdId.get(household.id) ?? [];
     const balances = household.members.map((member) => ({
       memberId: member.id,
-      balanceCents: expenses.reduce(
-        (sum, expense) =>
-          sum +
-          (expense.paidByMemberId === member.id ? expense.amountCents : 0) -
-          (expense.shares.find((share) => share.memberId === member.id)?.amountCents ?? 0),
-        0,
-      ),
+      balanceCents:
+        expenses.reduce(
+          (sum, expense) =>
+            sum +
+            (expense.paidByMemberId === member.id ? expense.amountCents : 0) -
+            (expense.shares.find((share) => share.memberId === member.id)?.amountCents ?? 0),
+          0,
+        ) +
+        settlements.reduce(
+          (sum, settlement) =>
+            sum +
+            (settlement.fromMemberId === member.id ? settlement.amountCents : 0) -
+            (settlement.toMemberId === member.id ? settlement.amountCents : 0),
+          0,
+        ),
     }));
-    return { expenses, balances };
+    return { expenses, settlements, balances, transfers: simplify(balances) };
   }
 
   function addExpense(household: StoredHousehold, newExpense: NewExpense) {
@@ -65,6 +98,7 @@ export function createFakeHouseholdsServer() {
       amountCents: newExpense.amountCents,
       paidByMemberId: newExpense.paidByMemberId,
       spentOn: newExpense.spentOn,
+      createdAt: nextCreatedAt(),
       shares: memberIds.map((memberId, index) => ({
         memberId,
         amountCents: baseShare + (index < remainder ? 1 : 0),
@@ -180,6 +214,22 @@ export function createFakeHouseholdsServer() {
       return json(201, view());
     }
 
+    if (segments[1] === "settlements") {
+      const settlements = settlementsByHouseholdId.get(household.id) ?? [];
+      if (method === "POST") {
+        settlementsByHouseholdId.set(household.id, [
+          { id: crypto.randomUUID(), ...body, createdAt: nextCreatedAt() },
+          ...settlements,
+        ]);
+        return json(201, moneyOf(household));
+      }
+      settlementsByHouseholdId.set(
+        household.id,
+        settlements.filter((settlement) => settlement.id !== segments[2]),
+      );
+      return json(200, moneyOf(household));
+    }
+
     if (segments[1] === "expenses") {
       if (method === "POST") {
         addExpense(household, body);
@@ -201,15 +251,19 @@ export function createFakeHouseholdsServer() {
       addMember(household, name, false);
       return json(201, view());
     }
-    const isInExpenses = (expensesByHouseholdId.get(household.id) ?? []).some(
-      (expense) =>
-        expense.paidByMemberId === segments[2] || expense.shares.some((share) => share.memberId === segments[2]),
-    );
+    const isInExpenses =
+      (expensesByHouseholdId.get(household.id) ?? []).some(
+        (expense) =>
+          expense.paidByMemberId === segments[2] || expense.shares.some((share) => share.memberId === segments[2]),
+      ) ||
+      (settlementsByHouseholdId.get(household.id) ?? []).some(
+        (settlement) => settlement.fromMemberId === segments[2] || settlement.toMemberId === segments[2],
+      );
     if (method === "DELETE" && isInExpenses) {
       const member = household.members.find((candidate) => candidate.id === segments[2]);
       return json(409, {
         error: "MEMBER_HAS_EXPENSES",
-        message: `${member?.name} is part of some expenses, so they stay in the household.`,
+        message: `${member?.name} is part of some expenses or payments, so they stay in the household.`,
       });
     }
     if (method === "DELETE") {
