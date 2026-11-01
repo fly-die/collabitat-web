@@ -103,7 +103,7 @@ export function ChoresView({ household }: ChoresViewProps) {
     );
   }
   if (screen.name === "add") {
-    return <AddChoreScreen onAdd={addChore} onBack={backToOverview} />;
+    return <AddChoreScreen household={household} onAdd={addChore} onBack={backToOverview} />;
   }
   if (screen.name === "chore") {
     const { task } = screen;

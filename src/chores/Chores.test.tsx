@@ -103,6 +103,23 @@ describe("chores", () => {
     expect(screen.getByText(/^Last done today by you\.$/)).toBeInTheDocument();
   });
 
+  it("lets me pick who takes turns", async () => {
+    await openChores("Lea");
+
+    fireEvent.click(screen.getByRole("button", { name: "Add a chore" }));
+    type("What needs doing?", "Water the plants");
+    fireEvent.click(screen.getByRole("checkbox", { name: "You" }));
+    fireEvent.click(screen.getByRole("checkbox", { name: "Lea" }));
+    fireEvent.click(screen.getByRole("button", { name: "Add chore" }));
+    expect(screen.getByText("Pick at least one person.")).toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole("checkbox", { name: "Lea" }));
+    fireEvent.click(screen.getByRole("button", { name: "Add chore" }));
+
+    expect(await screen.findByText("Lea's turn")).toBeInTheDocument();
+    expect(screen.queryByText("It's your turn.")).not.toBeInTheDocument();
+  });
+
   it("says what is missing before adding a chore", async () => {
     await openChores();
 

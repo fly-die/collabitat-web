@@ -1,5 +1,6 @@
 import { useId, useState, type FormEvent } from "react";
 import type { ApiError } from "../api/client";
+import type { Household } from "../api/households-api";
 import type { IntervalUnit, NewTask } from "../api/tasks-api";
 import { todayIsoDate } from "../money/money-format";
 
@@ -10,6 +11,7 @@ const UNITS: IntervalUnit[] = ["day", "week", "month"];
 const WHOLE_NUMBER_PATTERN = /^\d{1,3}$/;
 
 interface AddChoreScreenProps {
+  household: Household;
   onAdd: (task: NewTask) => Promise<unknown>;
   onBack: () => void;
 }
@@ -17,15 +19,17 @@ interface AddChoreScreenProps {
 interface FieldErrors {
   title?: string;
   every?: string;
+  rotation?: string;
   form?: string;
 }
 
-export function AddChoreScreen({ onAdd, onBack }: AddChoreScreenProps) {
+export function AddChoreScreen({ household, onAdd, onBack }: AddChoreScreenProps) {
   const fieldId = useId();
   const [title, setTitle] = useState("");
   const [every, setEvery] = useState(DEFAULT_EVERY);
   const [unit, setUnit] = useState<IntervalUnit>(DEFAULT_UNIT);
   const [firstDueOn, setFirstDueOn] = useState(() => todayIsoDate());
+  const [rotation, setRotation] = useState(() => household.members.map((member) => member.id));
   const [errors, setErrors] = useState<FieldErrors>({});
   const [isSubmitting, setIsSubmitting] = useState(false);
   const everyCount = WHOLE_NUMBER_PATTERN.test(every.trim()) ? Number(every) : Number.NaN;
@@ -34,6 +38,7 @@ export function AddChoreScreen({ onAdd, onBack }: AddChoreScreenProps) {
     return {
       title: title.trim() ? undefined : "Say what needs doing.",
       every: everyCount >= 1 && everyCount <= MAX_EVERY ? undefined : `Pick a number from 1 to ${MAX_EVERY}.`,
+      rotation: rotation.length > 0 ? undefined : "Pick at least one person.",
     };
   }
 
@@ -46,13 +51,21 @@ export function AddChoreScreen({ onAdd, onBack }: AddChoreScreenProps) {
     }
     setIsSubmitting(true);
     try {
-      await onAdd({ title, every: everyCount, unit, firstDueOn });
+      await onAdd({ title, every: everyCount, unit, firstDueOn, rotationMemberIds: rotation });
       onBack();
     } catch (submitError) {
       setErrors({ form: (submitError as ApiError).message });
       setIsSubmitting(false);
     }
   }
+
+  // Kept in household order, which is the order turns go in.
+  const toggleTurn = (memberId: string) =>
+    setRotation((current) =>
+      current.includes(memberId)
+        ? current.filter((id) => id !== memberId)
+        : household.members.map((member) => member.id).filter((id) => id === memberId || current.includes(id)),
+    );
 
   const errorText = (key: keyof FieldErrors) =>
     errors[key] && (
@@ -111,6 +124,17 @@ export function AddChoreScreen({ onAdd, onBack }: AddChoreScreenProps) {
           </select>
         </fieldset>
         {errorText("every")}
+
+        <fieldset className="split-picker" {...invalidProps("rotation")}>
+          <legend className="field-label">Who takes turns?</legend>
+          {household.members.map((member) => (
+            <label key={member.id} className="split-picker__option">
+              <input type="checkbox" checked={rotation.includes(member.id)} onChange={() => toggleTurn(member.id)} />
+              {member.id === household.currentMemberId ? "You" : member.name}
+            </label>
+          ))}
+        </fieldset>
+        {errorText("rotation")}
 
         <label className="field-label" htmlFor={`${fieldId}-first`}>
           First time

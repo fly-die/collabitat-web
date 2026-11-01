@@ -20,8 +20,7 @@ export interface NewTask {
   every: number;
   unit: IntervalUnit;
   firstDueOn: string;
-  // Everyone takes turns when this is left out.
-  rotationMemberIds?: string[];
+  rotationMemberIds: string[];
 }
 
 export interface Tasks {
