@@ -29,6 +29,9 @@ function nextStepTitle(household: Household) {
     : `Get ${waiting.length} flatmates to join`;
 }
 
+// Home opens on today, so the date sits where "Your household" used to.
+const TODAY_FORMAT = new Intl.DateTimeFormat("en-GB", { weekday: "long", day: "numeric", month: "long" });
+
 export function HouseholdView({
   household,
   onAddMember,
@@ -74,12 +77,12 @@ export function HouseholdView({
   return (
     <div className="screen household">
       <div className="household__main">
-        <p className="eyebrow">Your household</p>
+        <p className="eyebrow">{TODAY_FORMAT.format(new Date())}</p>
         <h1 className="page-title page-title--large">{household.name}</h1>
         {summary}
 
         <section aria-labelledby="members-heading">
-          <h2 id="members-heading" className="visually-hidden">
+          <h2 id="members-heading" className="section-title">
             Flatmates
           </h2>
           <Doorbell label="Flatmates">

@@ -21,7 +21,11 @@ export function MoneySummary({ household, onOpenMoney }: MoneySummaryProps) {
   const { isOwing, prefix, cents } = myBalance(state.money.transfers, me, nameOf);
 
   return (
-    <button
+    <section className="today" aria-labelledby="money-summary-heading">
+      <h2 id="money-summary-heading" className="section-title">
+        Money
+      </h2>
+      <button
       className={`money-summary${isOwing ? " money-summary--owe" : ""}`}
       type="button"
       onClick={onOpenMoney}
@@ -31,6 +35,7 @@ export function MoneySummary({ household, onOpenMoney }: MoneySummaryProps) {
         {cents !== undefined && formatAmount(cents)}
       </span>
       <span className="money-summary__action">{isOwing ? "Settle up" : "See money"}</span>
-    </button>
+      </button>
+    </section>
   );
 }
