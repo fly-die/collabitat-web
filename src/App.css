@@ -720,6 +720,11 @@
   font-weight: 700;
 }
 
+.chore__turn--mine {
+  color: var(--color-ink);
+  font-weight: 700;
+}
+
 .chore__done {
   flex-shrink: 0;
 }

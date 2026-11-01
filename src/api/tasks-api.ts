@@ -10,6 +10,9 @@ export interface Task {
   firstDueOn: string;
   nextDueOn: string;
   lastCompletion: { id: string; doneOn: string; memberId: string | null } | null;
+  // Who takes turns, in order, and whose turn it is now (null when nobody is left in the rotation).
+  rotation: string[];
+  turnMemberId: string | null;
 }
 
 export interface NewTask {
@@ -17,6 +20,8 @@ export interface NewTask {
   every: number;
   unit: IntervalUnit;
   firstDueOn: string;
+  // Everyone takes turns when this is left out.
+  rotationMemberIds?: string[];
 }
 
 export interface Tasks {

@@ -58,10 +58,15 @@ export function createFakeHouseholdsServer() {
   function tasksOf(household: StoredHousehold): { tasks: Task[] } {
     const tasks = (tasksByHouseholdId.get(household.id) ?? []).map(({ completions, ...task }) => {
       const latest = [...completions].sort((first, second) => second.doneOn.localeCompare(first.doneOn))[0];
+      const memberIds = household.members.map((member) => member.id);
+      const rotation = (task.rotationMemberIds ?? memberIds).filter((memberId) => memberIds.includes(memberId));
+      const lastIndex = latest ? rotation.indexOf(latest.memberId) : -1;
       return {
         ...task,
         nextDueOn: latest ? addInterval(latest.doneOn, task.every, task.unit) : task.firstDueOn,
         lastCompletion: latest ?? null,
+        rotation,
+        turnMemberId: rotation.length === 0 ? null : rotation[lastIndex === -1 ? 0 : (lastIndex + 1) % rotation.length],
       };
     });
     return { tasks: tasks.sort((first, second) => first.nextDueOn.localeCompare(second.nextDueOn)) };

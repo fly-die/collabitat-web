@@ -7,7 +7,7 @@ function type(label: string, value: string) {
   fireEvent.change(screen.getByLabelText(label), { target: { value } });
 }
 
-async function openChores() {
+async function openChores(...flatmates: string[]) {
   render(<App />);
   fireEvent.click(await screen.findByRole("button", { name: "Start a household" }));
   type("Household name", "Langstrasse 12");
@@ -15,6 +15,12 @@ async function openChores() {
   type("Email", "mia@example.com");
   type("Password", "correct horse battery");
   fireEvent.click(screen.getByRole("button", { name: "Create household" }));
+  for (const name of flatmates) {
+    fireEvent.click(await screen.findByRole("button", { name: "+ Add a flatmate" }));
+    type("New flatmate's name", name);
+    fireEvent.click(screen.getByRole("button", { name: "Add" }));
+    await screen.findByRole("button", { name: `Remove ${name}` });
+  }
   fireEvent.click(await screen.findByRole("button", { name: "Chores" }));
   await screen.findByRole("button", { name: "Add a chore" });
 }
@@ -62,8 +68,8 @@ describe("chores", () => {
 
     expect(heading()).toHaveTextContent("2 chores to do");
     expect(rows()).toEqual([
-      "Take out the trashDue todayEvery weekDone",
-      "Water the plantsDue todayEvery 3 daysDone",
+      "Take out the trashYour turnDue todayEvery weekDone",
+      "Water the plantsYour turnDue todayEvery 3 daysDone",
     ]);
   });
 
@@ -75,11 +81,26 @@ describe("chores", () => {
 
     expect(await screen.findByRole("status")).toHaveTextContent(/^Take out the trash done\. Next: .+\.Undo$/);
     expect(heading()).toHaveTextContent("All done for now");
-    expect(rows()).toEqual(["Take out the trashIn 7 daysEvery weekDone"]);
+    expect(rows()).toEqual(["Take out the trashYour turnIn 7 daysEvery weekDone"]);
 
     fireEvent.click(screen.getByRole("button", { name: "Undo" }));
     expect(await screen.findByRole("heading", { level: 1, name: "1 chore to do" })).toBeInTheDocument();
-    expect(rows()).toEqual(["Take out the trashDue todayEvery weekDone"]);
+    expect(rows()).toEqual(["Take out the trashYour turnDue todayEvery weekDone"]);
+  });
+
+  it("takes turns: says whose turn it is and passes it on when done", async () => {
+    await openChores("Lea");
+    await addChore("Take out the trash");
+
+    expect(rows()).toEqual(["Take out the trashYour turnDue todayEvery weekDone"]);
+    expect(screen.getByText("It's your turn.")).toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole("button", { name: "Mark Take out the trash done" }));
+    expect(await screen.findByText("Lea's turn")).toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole("button", { name: /^Take out the trash/ }));
+    expect(screen.getByText("Turns go You, then Lea.")).toBeInTheDocument();
+    expect(screen.getByText(/^Last done today by you\.$/)).toBeInTheDocument();
   });
 
   it("says what is missing before adding a chore", async () => {
