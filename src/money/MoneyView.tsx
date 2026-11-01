@@ -353,7 +353,7 @@ function MoneyOverview({
         </section>
       )}
 
-      <section aria-labelledby="history-heading">
+      <section className="money__history" aria-labelledby="history-heading">
         <h2 id="history-heading" className="section-title">
           History
         </h2>

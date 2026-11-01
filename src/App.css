@@ -1024,6 +1024,65 @@ select.text-input {
   .household__aside {
     padding-top: 3.25rem;
   }
+
+  /* The tabs become a rail on the left edge: always in view, never covering content. */
+  .app--with-tabs {
+    padding-left: 7rem;
+  }
+
+  .tab-bar {
+    top: 0;
+    right: auto;
+    width: 7rem;
+    flex-direction: column;
+    justify-content: flex-start;
+    gap: var(--space-2);
+    padding: calc(var(--space-8) + 3rem) var(--space-2) var(--space-4);
+    border-top: 0;
+    border-right: 1px solid var(--color-line);
+  }
+
+  .tab-bar__tab {
+    flex: 0 0 auto;
+    width: 100%;
+    max-width: none;
+  }
+
+  .app--with-tabs .screen {
+    padding-bottom: var(--space-8);
+  }
+
+  .app--with-tabs .undo-bar {
+    bottom: var(--space-6);
+    left: calc(7rem + var(--space-4));
+  }
+
+  /* Money: where I stand and what to settle on the left, the history beside it instead of below. */
+  .money {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+    align-items: start;
+    column-gap: 4rem;
+    max-width: 64rem;
+  }
+
+  .money > * {
+    grid-column: 1;
+  }
+
+  .money > .money__history {
+    grid-row: 1 / span 12;
+    grid-column: 2;
+    padding-top: 3.25rem;
+  }
+
+  .money__history .section-title {
+    margin-top: 0;
+  }
+
+  .chores {
+    max-width: 44rem;
+  }
 }
 
 /* Screens settle in gently instead of popping. */
