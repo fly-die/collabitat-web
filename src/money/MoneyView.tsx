@@ -7,6 +7,7 @@ import { UNDO_TIMEOUT_MS, UndoBar } from "../components/UndoBar";
 import { ExpenseScreen } from "./ExpenseScreen";
 import { SettleUpScreen } from "./SettleUpScreen";
 import { formatAmount, formatDay } from "./money-format";
+import { myBalance } from "./my-balance";
 import { useMoney } from "./useMoney";
 
 interface MoneyViewProps {
@@ -25,13 +26,6 @@ interface Undoable {
 }
 
 type NameOf = (memberId: string) => string;
-
-// After simplifying, nobody both owes and is owed, so this is what my headline shows.
-function myHeadlineCents(transfers: Transfer[], me: string) {
-  return transfers
-    .filter((transfer) => transfer.fromMemberId === me || transfer.toMemberId === me)
-    .reduce((sum, transfer) => sum + transfer.amountCents, 0);
-}
 
 function toNewExpense(expense: Expense): NewExpense {
   return {
@@ -147,7 +141,7 @@ export function MoneyView({ household }: MoneyViewProps) {
 
   const currentMoney = state.money;
   function leaveOverview(next: MoneyScreen) {
-    setHeadlineStartCents(myHeadlineCents(currentMoney.transfers, me));
+    setHeadlineStartCents(myBalance(currentMoney.transfers, me, nameOf).cents ?? 0);
     setScreen(next);
   }
 
@@ -178,29 +172,13 @@ interface HeadlineProps {
 }
 
 function Headline({ transfers, me, nameOf, startFromCents }: HeadlineProps) {
-  const owing = transfers.filter((transfer) => transfer.fromMemberId === me);
-  const owed = transfers.filter((transfer) => transfer.toMemberId === me);
-  const total = myHeadlineCents(transfers, me);
-
-  if (owing.length > 0) {
-    const prefix = owing.length === 1 ? `You owe ${nameOf(owing[0].toMemberId)} ` : "You owe ";
-    return (
-      <h1 className="page-title page-title--large page-title--owe">
-        {prefix}
-        <CountUpAmount cents={total} startFromCents={startFromCents} />
-      </h1>
-    );
-  }
-  if (owed.length > 0) {
-    const prefix = owed.length === 1 ? `${nameOf(owed[0].fromMemberId)} owes you ` : "You get back ";
-    return (
-      <h1 className="page-title page-title--large">
-        {prefix}
-        <CountUpAmount cents={total} startFromCents={startFromCents} />
-      </h1>
-    );
-  }
-  return <h1 className="page-title page-title--large">You're all square</h1>;
+  const { isOwing, prefix, cents } = myBalance(transfers, me, nameOf);
+  return (
+    <h1 className={`page-title page-title--large${isOwing ? " page-title--owe" : ""}`}>
+      {prefix}
+      {cents !== undefined && <CountUpAmount cents={cents} startFromCents={startFromCents} />}
+    </h1>
+  );
 }
 
 function describeTransfer(transfer: Transfer, me: string, nameOf: NameOf) {

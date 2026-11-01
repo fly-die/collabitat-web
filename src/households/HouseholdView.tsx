@@ -14,6 +14,8 @@ interface HouseholdViewProps {
   onRemoveMember: (memberId: string) => Promise<void>;
   onAddAccount: (credentials: Credentials) => Promise<void>;
   onLogOut: () => void;
+  // Shown right under the household name, e.g. where I stand with money.
+  summary?: ReactNode;
   footer?: ReactNode;
 }
 
@@ -33,6 +35,7 @@ export function HouseholdView({
   onRemoveMember,
   onAddAccount,
   onLogOut,
+  summary,
   footer,
 }: HouseholdViewProps) {
   const [removedMember, setRemovedMember] = useState<Member>();
@@ -73,6 +76,7 @@ export function HouseholdView({
       <div className="household__main">
         <p className="eyebrow">Your household</p>
         <h1 className="page-title page-title--large">{household.name}</h1>
+        {summary}
 
         <section aria-labelledby="members-heading">
           <h2 id="members-heading" className="visually-hidden">

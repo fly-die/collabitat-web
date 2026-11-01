@@ -8,6 +8,7 @@ import { WelcomeScreen } from "./households/WelcomeScreen";
 import { useHousehold } from "./households/useHousehold";
 import { LoginScreen } from "./accounts/LoginScreen";
 import { InstallHint } from "./install/InstallHint";
+import { MoneySummary } from "./money/MoneySummary";
 import { MoneyView } from "./money/MoneyView";
 import { Tab, TabBar } from "./navigation/TabBar";
 
@@ -97,6 +98,7 @@ export function App() {
           onRemoveMember={removeMember}
           onAddAccount={addAccount}
           onLogOut={logOutToWelcome}
+          summary={<MoneySummary household={state.household} onOpenMoney={() => setCurrentTab(Tab.Money)} />}
           footer={<InstallHint />}
         />
       )}

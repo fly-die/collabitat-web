@@ -248,6 +248,21 @@ describe("money", () => {
     expect(await screen.findByRole("heading", { level: 1, name: "You get back 20.00" })).toBeInTheDocument();
   });
 
+  it("says on Home where I stand once there is money, and takes me to Money", async () => {
+    await openMoneyWith("Lea");
+    fireEvent.click(screen.getByRole("button", { name: "Home" }));
+    await screen.findByRole("heading", { level: 1, name: "Langstrasse 12" });
+    expect(screen.queryByRole("button", { name: /See money|Settle up/ })).not.toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole("button", { name: "Money" }));
+    await screen.findByRole("button", { name: "Add an expense" });
+    await addExpense("Groceries", "30");
+    fireEvent.click(screen.getByRole("button", { name: "Home" }));
+
+    fireEvent.click(await screen.findByRole("button", { name: /^Lea owes you 15\.00\s*See money$/ }));
+    expect(await screen.findByRole("heading", { level: 1, name: "Lea owes you 15.00" })).toBeInTheDocument();
+  });
+
   it("keeps a flatmate who is part of an expense and says why", async () => {
     await openMoneyWith("Lea");
     await addExpense("Groceries", "30");
