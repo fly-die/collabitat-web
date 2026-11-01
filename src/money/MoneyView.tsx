@@ -51,6 +51,13 @@ export function MoneyView({ household }: MoneyViewProps) {
     memberId === me ? "You" : (household.members.find((member) => member.id === memberId)?.name ?? "Someone");
   const backToOverview = () => setScreen({ name: "overview" });
 
+  // Every money screen starts at the top, not where the previous one was scrolled to.
+  useEffect(() => {
+    if (document.scrollingElement) {
+      document.scrollingElement.scrollTop = 0;
+    }
+  }, [screen]);
+
   useEffect(() => {
     if (!undoable) {
       return;
