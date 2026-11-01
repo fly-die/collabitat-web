@@ -133,6 +133,21 @@ describe("money", () => {
     expect(screen.queryByText("Enter an amount like 12.50.")).not.toBeInTheDocument();
   });
 
+  it("shows what each person pays while I fill in the expense", async () => {
+    await openMoneyWith("Lea", "Noah");
+
+    fireEvent.click(screen.getByRole("button", { name: "Add an expense" }));
+    type("Amount", "CHF 30");
+    expect(screen.getByText("That's 10.00 each.")).toBeInTheDocument();
+
+    type("Amount", "10");
+    expect(screen.getByText("That's about 3.33 each.")).toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole("checkbox", { name: "You" }));
+    fireEvent.click(screen.getByRole("checkbox", { name: "Noah" }));
+    expect(screen.getByText("That's all on Lea.")).toBeInTheDocument();
+  });
+
   describe("settling up", () => {
     async function openSettleUp() {
       await openMoneyWith("Lea");

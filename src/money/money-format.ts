@@ -37,6 +37,17 @@ export function parseAmountCents(input: string): number | undefined {
   return Number(units) * CENTS_PER_UNIT + Number(decimals.padEnd(2, "0"));
 }
 
+// Mirrors the API's equal split: leftover cents make some shares one cent bigger, hence "about".
+export function describeSplit(amountCents: number, splitBetweenNames: string[]) {
+  if (splitBetweenNames.length === 1) {
+    const [name] = splitBetweenNames;
+    return name === "You" ? "That's all on you." : `That's all on ${name}.`;
+  }
+  const isEven = amountCents % splitBetweenNames.length === 0;
+  const share = formatAmount(Math.floor(amountCents / splitBetweenNames.length));
+  return isEven ? `That's ${share} each.` : `That's about ${share} each.`;
+}
+
 export function describeBalance(name: string, isMe: boolean, balanceCents: number) {
   const amount = formatAmount(Math.abs(balanceCents));
   if (balanceCents > 0) {

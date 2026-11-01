@@ -2,7 +2,7 @@ import { useId, useState, type FormEvent } from "react";
 import type { ApiError } from "../api/client";
 import type { NewExpense } from "../api/expenses-api";
 import type { Household } from "../api/households-api";
-import { parseAmountCents, todayIsoDate } from "./money-format";
+import { describeSplit, parseAmountCents, todayIsoDate } from "./money-format";
 
 interface AddExpenseScreenProps {
   household: Household;
@@ -73,6 +73,12 @@ export function AddExpenseScreen({ household, onAdd, onBack }: AddExpenseScreenP
       setIsSubmitting(false);
     }
   }
+
+  const amountCents = parseAmountCents(amount);
+  const splitNames = household.members
+    .filter((member) => splitBetween.includes(member.id))
+    .map((member) => nameOf(member.id) ?? member.name);
+  const splitPreview = amountCents && splitNames.length > 0 ? describeSplit(amountCents, splitNames) : undefined;
 
   const errorText = (key: keyof FieldErrors) =>
     errors[key] && (
@@ -157,6 +163,9 @@ export function AddExpenseScreen({ household, onAdd, onBack }: AddExpenseScreenP
           ))}
         </fieldset>
         {errorText("split")}
+        <p className="field-hint" aria-live="polite">
+          {splitPreview}
+        </p>
 
         <label className="field-label" htmlFor={`${fieldId}-date`}>
           Date
