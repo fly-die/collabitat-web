@@ -1,6 +1,8 @@
 import { useEffect, useState } from "react";
 import type { ApiError } from "../api/client";
-import { tasksApi, type NewTask, type Tasks } from "../api/tasks-api";
+import { tasksApi, type NewTask, type Task, type Tasks } from "../api/tasks-api";
+import type { Undoable } from "../components/useUndoable";
+import { formatDay, todayIsoDate } from "../money/money-format";
 
 type ChoresState =
   | { status: "loading" }
@@ -42,12 +44,25 @@ export function useChores() {
     return tasks;
   };
 
+  // Marks it done today and hands back how to take that back, for the undo bar.
+  const completeChore = async (task: Task): Promise<Undoable | undefined> => {
+    const tasks = await apply(tasksApi.markDone(task.id, todayIsoDate()));
+    const done = tasks.find((candidate) => candidate.id === task.id);
+    const completionId = done?.lastCompletion?.id;
+    if (!done || !completionId) {
+      return undefined;
+    }
+    return {
+      message: `${task.title} done. Next: ${formatDay(done.nextDueOn)}.`,
+      undo: () => apply(tasksApi.undoDone(task.id, completionId)),
+    };
+  };
+
   return {
     state,
+    completeChore,
     retry,
     addChore: (task: NewTask) => apply(tasksApi.add(task)),
     removeChore: (taskId: string) => apply(tasksApi.remove(taskId)),
-    markDone: (taskId: string, doneOn: string) => apply(tasksApi.markDone(taskId, doneOn)),
-    undoDone: (taskId: string, completionId: string) => apply(tasksApi.undoDone(taskId, completionId)),
   };
 }

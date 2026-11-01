@@ -38,9 +38,11 @@ async function addChore(title: string, every?: string, unit?: string) {
   await screen.findByRole("button", { name: "Add a chore" });
 }
 
+// Due chores first, then later ones, as they appear on screen.
 const rows = () =>
-  within(screen.getByRole("list", { name: "Chores" }))
-    .getAllByRole("listitem")
+  ["Due", "Later"]
+    .flatMap((name) => screen.queryAllByRole("list", { name }))
+    .flatMap((list) => within(list).getAllByRole("listitem"))
     .map((row) => row.textContent);
 
 const heading = () => screen.getByRole("heading", { level: 1 });
@@ -68,8 +70,8 @@ describe("chores", () => {
 
     expect(heading()).toHaveTextContent("2 chores to do");
     expect(rows()).toEqual([
-      "Take out the trashYour turnDue todayEvery weekDone",
-      "Water the plantsYour turnDue todayEvery 3 daysDone",
+      "Take out the trashYour turnDue todayDone",
+      "Water the plantsYour turnDue todayDone",
     ]);
   });
 
@@ -81,18 +83,18 @@ describe("chores", () => {
 
     expect(await screen.findByRole("status")).toHaveTextContent(/^Take out the trash done\. Next: .+\.Undo$/);
     expect(heading()).toHaveTextContent("All done for now");
-    expect(rows()).toEqual(["Take out the trashYour turnIn 7 daysEvery weekDone"]);
+    expect(rows()).toEqual(["Take out the trashYour turnIn 7 daysDone"]);
 
     fireEvent.click(screen.getByRole("button", { name: "Undo" }));
     expect(await screen.findByRole("heading", { level: 1, name: "1 chore to do" })).toBeInTheDocument();
-    expect(rows()).toEqual(["Take out the trashYour turnDue todayEvery weekDone"]);
+    expect(rows()).toEqual(["Take out the trashYour turnDue todayDone"]);
   });
 
   it("takes turns: says whose turn it is and passes it on when done", async () => {
     await openChores("Lea");
     await addChore("Take out the trash");
 
-    expect(rows()).toEqual(["Take out the trashYour turnDue todayEvery weekDone"]);
+    expect(rows()).toEqual(["Take out the trashYour turnDue todayDone"]);
     expect(screen.getByText("It's your turn.")).toBeInTheDocument();
 
     fireEvent.click(screen.getByRole("button", { name: "Mark Take out the trash done" }));
