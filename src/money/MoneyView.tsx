@@ -4,7 +4,7 @@ import type { Expense, Money, NewExpense, NewSettlement, Settlement, Transfer } 
 import type { Household } from "../api/households-api";
 import { CountUpAmount } from "../components/CountUpAmount";
 import { UNDO_TIMEOUT_MS, UndoBar } from "../components/UndoBar";
-import { AddExpenseScreen } from "./AddExpenseScreen";
+import { ExpenseScreen } from "./ExpenseScreen";
 import { SettleUpScreen } from "./SettleUpScreen";
 import { formatAmount, formatDay } from "./money-format";
 import { useMoney } from "./useMoney";
@@ -13,7 +13,11 @@ interface MoneyViewProps {
   household: Household;
 }
 
-type MoneyScreen = { name: "overview" } | { name: "add-expense" } | { name: "settle-up"; transfer: Transfer };
+type MoneyScreen =
+  | { name: "overview" }
+  | { name: "add-expense" }
+  | { name: "expense"; expense: Expense }
+  | { name: "settle-up"; transfer: Transfer };
 
 interface Undoable {
   message: string;
@@ -44,7 +48,7 @@ function toNewSettlement({ fromMemberId, toMemberId, amountCents, settledOn }: S
 }
 
 export function MoneyView({ household }: MoneyViewProps) {
-  const { state, retry, addExpense, removeExpense, settle, removeSettlement } = useMoney();
+  const { state, retry, addExpense, editExpense, removeExpense, settle, removeSettlement } = useMoney();
   const [screen, setScreen] = useState<MoneyScreen>({ name: "overview" });
   const [undoable, setUndoable] = useState<Undoable>();
   const [headlineStartCents, setHeadlineStartCents] = useState<number>();
@@ -75,7 +79,34 @@ export function MoneyView({ household }: MoneyViewProps) {
     );
   }
   if (screen.name === "add-expense") {
-    return <AddExpenseScreen household={household} onAdd={addExpense} onBack={backToOverview} />;
+    return <ExpenseScreen household={household} onSave={addExpense} onBack={backToOverview} />;
+  }
+
+  async function deleteExpense(expense: Expense) {
+    await removeExpense(expense.id);
+    setUndoable({ message: `${expense.description} deleted.`, undo: () => addExpense(toNewExpense(expense)) });
+  }
+
+  if (screen.name === "expense") {
+    const { expense } = screen;
+    return (
+      <ExpenseScreen
+        household={household}
+        expense={expense}
+        onSave={async (changes) => {
+          await editExpense(expense.id, changes);
+          setUndoable({
+            message: `${expense.description} changed.`,
+            undo: () => editExpense(expense.id, toNewExpense(expense)),
+          });
+        }}
+        onDelete={async () => {
+          await deleteExpense(expense);
+          backToOverview();
+        }}
+        onBack={backToOverview}
+      />
+    );
   }
 
   const knownSettlementIds = new Set(state.money.settlements.map((settlement) => settlement.id));
@@ -104,11 +135,6 @@ export function MoneyView({ household }: MoneyViewProps) {
     );
   }
 
-  async function deleteExpense(expense: Expense) {
-    await removeExpense(expense.id);
-    setUndoable({ message: `${expense.description} deleted.`, undo: () => addExpense(toNewExpense(expense)) });
-  }
-
   async function deleteSettlement(settlement: Settlement) {
     await removeSettlement(settlement.id);
     setUndoable({
@@ -133,7 +159,7 @@ export function MoneyView({ household }: MoneyViewProps) {
       headlineStartCents={headlineStartCents}
       onStartAdding={() => leaveOverview({ name: "add-expense" })}
       onSettleUp={(transfer) => leaveOverview({ name: "settle-up", transfer })}
-      onDeleteExpense={deleteExpense}
+      onOpenExpense={(expense) => leaveOverview({ name: "expense", expense })}
       onDeleteSettlement={deleteSettlement}
       undoable={undoable}
       onUndo={async (action) => {
@@ -202,7 +228,7 @@ interface MoneyOverviewProps {
   headlineStartCents?: number;
   onStartAdding: () => void;
   onSettleUp: (transfer: Transfer) => void;
-  onDeleteExpense: (expense: Expense) => Promise<void>;
+  onOpenExpense: (expense: Expense) => void;
   onDeleteSettlement: (settlement: Settlement) => Promise<void>;
   undoable?: Undoable;
   onUndo: (action: Undoable) => Promise<void>;
@@ -215,7 +241,7 @@ function MoneyOverview({
   headlineStartCents,
   onStartAdding,
   onSettleUp,
-  onDeleteExpense,
+  onOpenExpense,
   onDeleteSettlement,
   undoable,
   onUndo,
@@ -253,35 +279,51 @@ function MoneyOverview({
     }
   }
 
-  function historyRow(entry: HistoryEntry) {
-    const isPayment = entry.kind === "payment";
-    const id = isPayment ? entry.settlement.id : entry.expense.id;
-    const title = isPayment ? describePayment(entry.settlement, me, nameOf) : entry.expense.description;
-    const detail = isPayment ? "Payment" : `${nameOf(entry.expense.paidByMemberId)} paid`;
-    const amountCents = isPayment ? entry.settlement.amountCents : entry.expense.amountCents;
-    const onDelete = () =>
-      run(() => (isPayment ? onDeleteSettlement(entry.settlement) : onDeleteExpense(entry.expense)));
+  function expenseRow(expense: Expense) {
+    const myShare = expense.shares.find((share) => share.memberId === me);
     return (
-      <li key={id} className={`panel__row expense${isPayment ? " expense--payment" : ""}`}>
+      <li key={expense.id} className="panel__row expense">
+        <button className="expense__open" type="button" onClick={() => onOpenExpense(expense)}>
+          <span className="expense__text">
+            <span className="expense__description">{expense.description}</span>
+            <span className="expense__meta">
+              <span>{nameOf(expense.paidByMemberId)} paid</span>
+              <span>{formatDay(expense.spentOn)}</span>
+              {myShare && <span>Your share {formatAmount(myShare.amountCents)}</span>}
+            </span>
+          </span>
+          <span className="expense__amount">{formatAmount(expense.amountCents)}</span>
+        </button>
+      </li>
+    );
+  }
+
+  function paymentRow(settlement: Settlement) {
+    const title = describePayment(settlement, me, nameOf);
+    return (
+      <li key={settlement.id} className="panel__row expense expense--payment">
         <span className="expense__text">
           <span className="expense__description">{title}</span>
           <span className="expense__meta">
-            <span>{detail}</span>
-            <span>{formatDay(entry.day)}</span>
+            <span>Payment</span>
+            <span>{formatDay(settlement.settledOn)}</span>
           </span>
         </span>
-        <span className="expense__amount">{formatAmount(amountCents)}</span>
+        <span className="expense__amount">{formatAmount(settlement.amountCents)}</span>
         <button
           className="button button--quiet expense__delete"
           type="button"
-          aria-label={isPayment ? `Delete payment: ${title}` : `Delete ${title}`}
-          onClick={onDelete}
+          aria-label={`Delete payment: ${title}`}
+          onClick={() => run(() => onDeleteSettlement(settlement))}
         >
           Delete
         </button>
       </li>
     );
   }
+
+  const historyRow = (entry: HistoryEntry) =>
+    entry.kind === "payment" ? paymentRow(entry.settlement) : expenseRow(entry.expense);
 
   return (
     <div className="screen money">

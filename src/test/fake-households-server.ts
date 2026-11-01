@@ -86,28 +86,47 @@ export function createFakeHouseholdsServer() {
     return { expenses, settlements, balances, transfers: simplify(balances) };
   }
 
-  function addExpense(household: StoredHousehold, newExpense: NewExpense) {
+  function toExpense(household: StoredHousehold, newExpense: NewExpense, id: string, createdAt: string): Expense {
     const memberIds = household.members
       .map((member) => member.id)
-      .filter((id) => newExpense.splitBetweenMemberIds.includes(id));
+      .filter((memberId) => newExpense.splitBetweenMemberIds.includes(memberId));
     const baseShare = Math.floor(newExpense.amountCents / memberIds.length);
     const remainder = newExpense.amountCents % memberIds.length;
-    const expense: Expense = {
-      id: crypto.randomUUID(),
+    return {
+      id,
       description: newExpense.description.trim(),
       amountCents: newExpense.amountCents,
       paidByMemberId: newExpense.paidByMemberId,
       spentOn: newExpense.spentOn,
-      createdAt: nextCreatedAt(),
+      createdAt,
       shares: memberIds.map((memberId, index) => ({
         memberId,
         amountCents: baseShare + (index < remainder ? 1 : 0),
       })),
     };
-    const expenses = [expense, ...(expensesByHouseholdId.get(household.id) ?? [])];
+  }
+
+  function sortedNewestFirst(expenses: Expense[]) {
+    return expenses.sort((first, second) => second.spentOn.localeCompare(first.spentOn));
+  }
+
+  function addExpense(household: StoredHousehold, newExpense: NewExpense) {
+    const expense = toExpense(household, newExpense, crypto.randomUUID(), nextCreatedAt());
     expensesByHouseholdId.set(
       household.id,
-      expenses.sort((first, second) => second.spentOn.localeCompare(first.spentOn)),
+      sortedNewestFirst([expense, ...(expensesByHouseholdId.get(household.id) ?? [])]),
+    );
+  }
+
+  function editExpense(household: StoredHousehold, expenseId: string, changes: NewExpense) {
+    const expenses = expensesByHouseholdId.get(household.id) ?? [];
+    expensesByHouseholdId.set(
+      household.id,
+      sortedNewestFirst(
+        expenses.map((expense) =>
+          expense.id === expenseId ? toExpense(household, changes, expense.id, expense.createdAt) : expense,
+        ),
+      ),
     );
   }
 
@@ -234,6 +253,9 @@ export function createFakeHouseholdsServer() {
       if (method === "POST") {
         addExpense(household, body);
         return json(201, moneyOf(household));
+      }
+      if (method === "PUT") {
+        editExpense(household, segments[2], body);
       }
       if (method === "DELETE") {
         expensesByHouseholdId.set(

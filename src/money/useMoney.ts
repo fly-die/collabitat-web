@@ -38,6 +38,9 @@ export function useMoney() {
   const addExpense = async (expense: NewExpense) =>
     setState({ status: "ready", money: await expensesApi.add(expense) });
 
+  const editExpense = async (expenseId: string, expense: NewExpense) =>
+    setState({ status: "ready", money: await expensesApi.edit(expenseId, expense) });
+
   const removeExpense = async (expenseId: string) =>
     setState({ status: "ready", money: await expensesApi.remove(expenseId) });
 
@@ -51,5 +54,5 @@ export function useMoney() {
   const removeSettlement = async (settlementId: string) =>
     setState({ status: "ready", money: await expensesApi.removeSettlement(settlementId) });
 
-  return { state, retry, addExpense, removeExpense, settle, removeSettlement };
+  return { state, retry, addExpense, editExpense, removeExpense, settle, removeSettlement };
 }

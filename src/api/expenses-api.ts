@@ -54,15 +54,16 @@ export interface Money {
 const EXPENSE_NOT_FOUND_CODE = "EXPENSE_NOT_FOUND";
 const SETTLEMENT_NOT_FOUND_CODE = "SETTLEMENT_NOT_FOUND";
 
+const expensePath = (expenseId: string) =>
+  `/household/expenses/${safeId(expenseId, EXPENSE_NOT_FOUND_CODE, "That expense is already gone.")}`;
+
 export const expensesApi = {
   get: () => request<Money>("/household/expenses"),
   add: (expense: NewExpense) =>
     request<Money>("/household/expenses", { method: "POST", body: JSON.stringify(expense) }),
-  remove: (expenseId: string) =>
-    request<Money>(
-      `/household/expenses/${safeId(expenseId, EXPENSE_NOT_FOUND_CODE, "That expense is already gone.")}`,
-      { method: "DELETE" },
-    ),
+  edit: (expenseId: string, expense: NewExpense) =>
+    request<Money>(expensePath(expenseId), { method: "PUT", body: JSON.stringify(expense) }),
+  remove: (expenseId: string) => request<Money>(expensePath(expenseId), { method: "DELETE" }),
   settle: (settlement: NewSettlement) =>
     request<Money>("/household/settlements", { method: "POST", body: JSON.stringify(settlement) }),
   removeSettlement: (settlementId: string) =>

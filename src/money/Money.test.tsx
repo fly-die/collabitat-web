@@ -65,7 +65,7 @@ describe("money", () => {
 
     expect(heading()).toHaveTextContent("Lea owes you 22.75");
     expect(rowsOf("Settle up")).toEqual(["Lea owes you 22.75Mark paid"]);
-    expect(rowsOf("History")).toEqual(["GroceriesYou paidToday45.50Delete"]);
+    expect(rowsOf("History")).toEqual(["GroceriesYou paidTodayYour share 22.7545.50"]);
   });
 
   it("names who I owe when someone else paid", async () => {
@@ -206,21 +206,46 @@ describe("money", () => {
   it("lets me undo deleting an expense, and hides undo after a while", async () => {
     await openMoneyWith("Lea");
     await addExpense("Groceries", "30");
+    const openGroceries = () => fireEvent.click(screen.getByRole("button", { name: /^Groceries/ }));
+    const deleteOpenExpense = () => fireEvent.click(screen.getByRole("button", { name: "Delete expense" }));
 
-    fireEvent.click(screen.getByRole("button", { name: "Delete Groceries" }));
+    openGroceries();
+    deleteOpenExpense();
     expect(await screen.findByRole("status")).toHaveTextContent("Groceries deleted.");
     expect(screen.getByText(/Nothing here yet/)).toBeInTheDocument();
     fireEvent.click(screen.getByRole("button", { name: "Undo" }));
     expect(await screen.findByText("Groceries")).toBeInTheDocument();
     expect(heading()).toHaveTextContent("Lea owes you 15.00");
 
+    openGroceries();
     vi.useFakeTimers();
-    await act(async () => {
-      fireEvent.click(screen.getByRole("button", { name: "Delete Groceries" }));
-    });
+    await act(async () => deleteOpenExpense());
     expect(screen.getByRole("button", { name: "Undo" })).toBeInTheDocument();
     act(() => vi.advanceTimersByTime(UNDO_TIMEOUT_MS));
     expect(screen.queryByRole("button", { name: "Undo" })).not.toBeInTheDocument();
+  });
+
+  it("opens an expense filled in as it was, fixes it, and can undo the fix", async () => {
+    await openMoneyWith("Lea", "Noah");
+    await addExpense("Groceries", "30");
+
+    fireEvent.click(screen.getByRole("button", { name: /^Groceries/ }));
+
+    expect(heading()).toHaveTextContent("Edit expense");
+    expect(screen.getByLabelText("What was it for?")).toHaveValue("Groceries");
+    expect(screen.getByLabelText("Amount")).toHaveValue("30.00");
+    expect(screen.getByText("That's 10.00 each.")).toBeInTheDocument();
+
+    type("Amount", "45");
+    fireEvent.click(screen.getByRole("checkbox", { name: "Noah" }));
+    fireEvent.click(screen.getByRole("button", { name: "Save changes" }));
+
+    expect(await screen.findByRole("status")).toHaveTextContent("Groceries changed.");
+    expect(heading()).toHaveTextContent("Lea owes you 22.50");
+    expect(rowsOf("History")).toEqual(["GroceriesYou paidTodayYour share 22.5045.00"]);
+
+    fireEvent.click(screen.getByRole("button", { name: "Undo" }));
+    expect(await screen.findByRole("heading", { level: 1, name: "You get back 20.00" })).toBeInTheDocument();
   });
 
   it("keeps a flatmate who is part of an expense and says why", async () => {

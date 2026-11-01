@@ -1,12 +1,15 @@
 import { useId, useState, type FormEvent } from "react";
 import type { ApiError } from "../api/client";
-import type { NewExpense } from "../api/expenses-api";
+import type { Expense, NewExpense } from "../api/expenses-api";
 import type { Household } from "../api/households-api";
-import { describeSplit, parseAmountCents, todayIsoDate } from "./money-format";
+import { describeSplit, formatAmount, parseAmountCents, todayIsoDate } from "./money-format";
 
-interface AddExpenseScreenProps {
+interface ExpenseScreenProps {
   household: Household;
-  onAdd: (expense: NewExpense) => Promise<void>;
+  // The expense to fix; without it the screen adds a new one.
+  expense?: Expense;
+  onSave: (expense: NewExpense) => Promise<void>;
+  onDelete?: () => Promise<void>;
   onBack: () => void;
 }
 
@@ -17,14 +20,16 @@ interface FieldErrors {
   form?: string;
 }
 
-export function AddExpenseScreen({ household, onAdd, onBack }: AddExpenseScreenProps) {
+export function ExpenseScreen({ household, expense, onSave, onDelete, onBack }: ExpenseScreenProps) {
   const fieldId = useId();
   const me = household.currentMemberId;
-  const [description, setDescription] = useState("");
-  const [amount, setAmount] = useState("");
-  const [paidByMemberId, setPaidByMemberId] = useState(me);
-  const [splitBetween, setSplitBetween] = useState(() => household.members.map((member) => member.id));
-  const [spentOn, setSpentOn] = useState(() => todayIsoDate());
+  const [description, setDescription] = useState(expense?.description ?? "");
+  const [amount, setAmount] = useState(() => (expense ? formatAmount(expense.amountCents) : ""));
+  const [paidByMemberId, setPaidByMemberId] = useState(expense?.paidByMemberId ?? me);
+  const [splitBetween, setSplitBetween] = useState(
+    () => expense?.shares.map((share) => share.memberId) ?? household.members.map((member) => member.id),
+  );
+  const [spentOn, setSpentOn] = useState(() => expense?.spentOn ?? todayIsoDate());
   const [errors, setErrors] = useState<FieldErrors>({});
   const [isSubmitting, setIsSubmitting] = useState(false);
 
@@ -60,7 +65,7 @@ export function AddExpenseScreen({ household, onAdd, onBack }: AddExpenseScreenP
     }
     setIsSubmitting(true);
     try {
-      await onAdd({
+      await onSave({
         description,
         amountCents: parseAmountCents(amount) ?? 0,
         paidByMemberId,
@@ -70,6 +75,16 @@ export function AddExpenseScreen({ household, onAdd, onBack }: AddExpenseScreenP
       onBack();
     } catch (submitError) {
       setErrors({ form: (submitError as ApiError).message });
+      setIsSubmitting(false);
+    }
+  }
+
+  async function handleDelete(deleteExpense: () => Promise<void>) {
+    setIsSubmitting(true);
+    try {
+      await deleteExpense();
+    } catch (deleteError) {
+      setErrors({ form: (deleteError as ApiError).message });
       setIsSubmitting(false);
     }
   }
@@ -94,7 +109,7 @@ export function AddExpenseScreen({ household, onAdd, onBack }: AddExpenseScreenP
       <button className="back-link" type="button" onClick={onBack}>
         Back
       </button>
-      <h1 className="page-title">Add an expense</h1>
+      <h1 className="page-title">{expense ? "Edit expense" : "Add an expense"}</h1>
 
       <form className="stacked-form" onSubmit={handleSubmit} noValidate>
         <label className="field-label" htmlFor={`${fieldId}-description`}>
@@ -106,7 +121,7 @@ export function AddExpenseScreen({ household, onAdd, onBack }: AddExpenseScreenP
           value={description}
           placeholder="Groceries"
           autoComplete="off"
-          autoFocus
+          autoFocus={!expense}
           {...invalidProps("description")}
           onChange={(event) => {
             setDescription(event.target.value);
@@ -180,10 +195,20 @@ export function AddExpenseScreen({ household, onAdd, onBack }: AddExpenseScreenP
         />
 
         <button className="button button--block button--submit" type="submit" disabled={isSubmitting}>
-          Add expense
+          {expense ? "Save changes" : "Add expense"}
         </button>
         {errorText("form")}
       </form>
+      {onDelete && (
+        <button
+          className="button button--quiet expense-screen__delete"
+          type="button"
+          disabled={isSubmitting}
+          onClick={() => handleDelete(onDelete)}
+        >
+          Delete expense
+        </button>
+      )}
     </div>
   );
 }
