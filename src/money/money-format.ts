@@ -2,6 +2,10 @@ const CENTS_PER_UNIT = 100;
 const MILLISECONDS_PER_DAY = 86_400_000;
 // Whole amounts up to 6 digits, with an optional "." or "," and up to two decimals.
 const AMOUNT_PATTERN = /^(\d{1,6})(?:[.,](\d{1,2}))?$/;
+// How amounts get written in Switzerland: "CHF 20", "Fr. 20", "20.-", "1'200".
+const CURRENCY_PATTERN = /^(?:s?fr\.?|chf)|(?:s?fr\.?|chf)$/gi;
+const WHOLE_AMOUNT_DASH_PATTERN = /[.,][-–]$/;
+const DIGIT_GROUPING_PATTERN = /[\s'’]/g;
 
 const amountFormat = new Intl.NumberFormat("de-CH", {
   minimumFractionDigits: 2,
@@ -20,7 +24,12 @@ export function formatAmount(cents: number) {
 
 // Works on the digits instead of floats, so "0.29" becomes exactly 29 cents.
 export function parseAmountCents(input: string): number | undefined {
-  const match = AMOUNT_PATTERN.exec(input.trim());
+  const digits = input
+    .trim()
+    .replace(CURRENCY_PATTERN, "")
+    .replace(DIGIT_GROUPING_PATTERN, "")
+    .replace(WHOLE_AMOUNT_DASH_PATTERN, "");
+  const match = AMOUNT_PATTERN.exec(digits);
   if (!match) {
     return undefined;
   }

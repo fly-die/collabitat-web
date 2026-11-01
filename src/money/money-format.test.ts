@@ -8,11 +8,18 @@ describe("money format", () => {
     ["12,50", 1250],
     [" 0.29 ", 29],
     ["100000", 10_000_000],
+    ["CHF 20", 2000],
+    ["Fr. 12.50", 1250],
+    ["20 chf", 2000],
+    ["20.-", 2000],
+    ["15,–", 1500],
+    ["1'200.50", 120_050],
+    ["1’200", 120_000],
   ])("reads %j as %i cents", (input, cents) => {
     expect(parseAmountCents(input)).toBe(cents);
   });
 
-  it.each(["", "abc", "12.505", "-5", "1'200", "1234567"])("rejects %j", (input) => {
+  it.each(["", "abc", "CHF", "12.505", "-5", "1,200.50", "1234567", "EUR 20"])("rejects %j", (input) => {
     expect(parseAmountCents(input)).toBeUndefined();
   });
 
