@@ -645,18 +645,21 @@
   color: var(--color-owe);
 }
 
-.expense__text {
+.expense__text,
+.chore__text {
   display: flex;
   flex: 1;
   flex-direction: column;
   min-width: 0;
 }
 
-.expense__description {
+.expense__description,
+.chore__title {
   overflow-wrap: anywhere;
 }
 
-.expense__meta {
+.expense__meta,
+.chore__meta {
   display: flex;
   flex-wrap: wrap;
   column-gap: var(--space-3);
@@ -675,7 +678,8 @@
 }
 
 /* The whole row opens the expense, so it fills the row's padding as its tap area. */
-.expense__open {
+.expense__open,
+.chore__open {
   display: flex;
   flex: 1;
   align-items: center;
@@ -693,11 +697,14 @@
 }
 
 .expense__open:hover,
-.expense__open:active {
+.expense__open:active,
+.chore__open:hover,
+.chore__open:active {
   background: var(--color-canvas);
 }
 
-.expense__open:focus-visible {
+.expense__open:focus-visible,
+.chore__open:focus-visible {
   outline: 2px solid var(--color-accent);
   outline-offset: -2px;
 }
@@ -706,6 +713,40 @@
   align-self: flex-start;
   margin-top: var(--space-4);
   color: var(--color-owe);
+}
+
+.chore__due--overdue {
+  color: var(--color-owe);
+  font-weight: 700;
+}
+
+.chore__done {
+  flex-shrink: 0;
+}
+
+.chore-detail {
+  margin: 0 0 var(--space-2);
+  color: var(--color-ink-muted);
+}
+
+.chore-interval {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-2);
+  margin: 0;
+  padding: 0;
+  border: 0;
+}
+
+.chore-interval legend {
+  width: 100%;
+  padding: 0;
+}
+
+.chore-interval__unit {
+  flex: 1;
+  min-width: 8rem;
 }
 
 .money-summary {

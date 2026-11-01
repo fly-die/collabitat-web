@@ -3,6 +3,7 @@ import type { ReactNode } from "react";
 export const Tab = {
   Home: "home",
   Money: "money",
+  Chores: "chores",
 } as const;
 
 export type Tab = (typeof Tab)[keyof typeof Tab];
@@ -15,11 +16,18 @@ const TAB_ICON_PATHS: Record<Tab, ReactNode> = {
       <circle cx="12" cy="12" r="2.5" />
     </>
   ),
+  [Tab.Chores]: (
+    <>
+      <circle cx="12" cy="12" r="8.5" />
+      <path d="m8.5 12.2 2.4 2.4 4.6-4.9" />
+    </>
+  ),
 };
 
 const TAB_LABELS: Record<Tab, string> = {
   [Tab.Home]: "Home",
   [Tab.Money]: "Money",
+  [Tab.Chores]: "Chores",
 };
 
 interface TabBarProps {
@@ -27,7 +35,7 @@ interface TabBarProps {
   onSelect: (tab: Tab) => void;
 }
 
-// Chores and Meals join the bar once they exist, never as disabled placeholders.
+// Meals joins the bar once it exists, never as a disabled placeholder.
 export function TabBar({ currentTab, onSelect }: TabBarProps) {
   return (
     <nav className="tab-bar" aria-label="Main">

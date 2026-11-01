@@ -8,6 +8,7 @@ import { WelcomeScreen } from "./households/WelcomeScreen";
 import { useHousehold } from "./households/useHousehold";
 import { LoginScreen } from "./accounts/LoginScreen";
 import { InstallHint } from "./install/InstallHint";
+import { ChoresView } from "./chores/ChoresView";
 import { MoneySummary } from "./money/MoneySummary";
 import { MoneyView } from "./money/MoneyView";
 import { Tab, TabBar } from "./navigation/TabBar";
@@ -104,6 +105,8 @@ export function App() {
       )}
 
       {state.status === "ready" && currentTab === Tab.Money && <MoneyView household={state.household} />}
+
+      {state.status === "ready" && currentTab === Tab.Chores && <ChoresView household={state.household} />}
 
       {state.status === "ready" && <TabBar currentTab={currentTab} onSelect={setCurrentTab} />}
     </main>

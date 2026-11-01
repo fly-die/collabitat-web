@@ -5,7 +5,7 @@ const MILLISECONDS_PER_DAY = 86_400_000;
 // Within two weeks "In 9 days" reads easier than a date.
 const COUNT_DAYS_UP_TO = 13;
 
-const plural = (count: number, word: string) => `${count} ${word}${count === 1 ? "" : "s"}`;
+export const plural = (count: number, word: string) => `${count} ${word}${count === 1 ? "" : "s"}`;
 
 export function daysUntil(isoDay: string, now = new Date()) {
   return Math.round(

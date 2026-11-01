@@ -1,5 +1,6 @@
 import type { Expense, NewExpense, Settlement, Transfer } from "../api/expenses-api";
 import type { Household } from "../api/households-api";
+import type { NewTask, Task } from "../api/tasks-api";
 
 type StoredHousehold = Omit<Household, "currentMemberId" | "currentMemberHasAccount">;
 
@@ -38,6 +39,33 @@ export function createFakeHouseholdsServer() {
   }
   const expensesByHouseholdId = new Map<string, Expense[]>();
   const settlementsByHouseholdId = new Map<string, Settlement[]>();
+  const tasksByHouseholdId = new Map<string, (NewTask & { id: string; completions: { id: string; doneOn: string; memberId: string }[] })[]>();
+
+  // Same rule as the API: one interval after the latest completion, months clamped to their last day.
+  function addInterval(isoDate: string, every: number, unit: NewTask["unit"]) {
+    const date = new Date(`${isoDate}T00:00:00Z`);
+    if (unit === "month") {
+      const day = date.getUTCDate();
+      date.setUTCDate(1);
+      date.setUTCMonth(date.getUTCMonth() + every);
+      date.setUTCDate(Math.min(day, new Date(Date.UTC(date.getUTCFullYear(), date.getUTCMonth() + 1, 0)).getUTCDate()));
+    } else {
+      date.setUTCDate(date.getUTCDate() + (unit === "week" ? 7 : 1) * every);
+    }
+    return date.toISOString().slice(0, 10);
+  }
+
+  function tasksOf(household: StoredHousehold): { tasks: Task[] } {
+    const tasks = (tasksByHouseholdId.get(household.id) ?? []).map(({ completions, ...task }) => {
+      const latest = [...completions].sort((first, second) => second.doneOn.localeCompare(first.doneOn))[0];
+      return {
+        ...task,
+        nextDueOn: latest ? addInterval(latest.doneOn, task.every, task.unit) : task.firstDueOn,
+        lastCompletion: latest ?? null,
+      };
+    });
+    return { tasks: tasks.sort((first, second) => first.nextDueOn.localeCompare(second.nextDueOn)) };
+  }
   // Strictly increasing, so entries added within one millisecond still keep their order.
   let createdCount = 0;
   const nextCreatedAt = () => new Date(Date.UTC(2026, 0, 1) + (createdCount += 1)).toISOString();
@@ -231,6 +259,28 @@ export function createFakeHouseholdsServer() {
       }
       addAccount(body, currentMemberId);
       return json(201, view());
+    }
+
+    if (segments[1] === "tasks") {
+      const tasks = tasksByHouseholdId.get(household.id) ?? [];
+      const task = tasks.find((candidate) => candidate.id === segments[2]);
+      if (method === "POST" && !segments[2]) {
+        tasksByHouseholdId.set(household.id, [...tasks, { ...body, title: body.title.trim(), id: crypto.randomUUID(), completions: [] }]);
+        return json(201, tasksOf(household));
+      }
+      if (segments[2] && !task) {
+        return json(404, { error: "TASK_NOT_FOUND", message: "That chore is already gone." });
+      }
+      if (task && method === "POST") {
+        task.completions.push({ id: crypto.randomUUID(), doneOn: body.doneOn, memberId: currentMemberId });
+        return json(201, tasksOf(household));
+      }
+      if (task && method === "DELETE" && segments[3] === "completions") {
+        task.completions = task.completions.filter((completion) => completion.id !== segments[4]);
+      } else if (task && method === "DELETE") {
+        tasksByHouseholdId.set(household.id, tasks.filter((candidate) => candidate !== task));
+      }
+      return json(200, tasksOf(household));
     }
 
     if (segments[1] === "settlements") {
