@@ -41,6 +41,12 @@ export function ChoresView({ household }: ChoresViewProps) {
       : (household.members.find((member) => member.id === memberId)?.name ?? "someone who left");
 
   const capitalize = (text: string) => text.charAt(0).toUpperCase() + text.slice(1);
+  const describeTurns = (rotation: string[]) => {
+    if (rotation.length > 1) {
+      return `Turns go ${rotation.map((memberId) => capitalize(nameOf(memberId))).join(", then ")}.`;
+    }
+    return rotation[0] === household.currentMemberId ? "You do it every time." : `${capitalize(nameOf(rotation[0]))} does it every time.`;
+  };
   const turnText = (memberId: string) =>
     memberId === household.currentMemberId ? "Your turn" : `${capitalize(nameOf(memberId))}'s turn`;
 
@@ -117,7 +123,7 @@ export function ChoresView({ household }: ChoresViewProps) {
           {describeInterval(task.every, task.unit)}. {describeDue(task.nextDueOn)}.
         </p>
         {task.rotation.length > 0 && (
-          <p className="chore-detail">Turns go {task.rotation.map((memberId) => capitalize(nameOf(memberId))).join(", then ")}.</p>
+          <p className="chore-detail">{describeTurns(task.rotation)}</p>
         )}
         <p className="chore-detail">
           {task.lastCompletion

@@ -118,6 +118,8 @@ describe("chores", () => {
 
     expect(await screen.findByText("Lea's turn")).toBeInTheDocument();
     expect(screen.queryByText("It's your turn.")).not.toBeInTheDocument();
+    fireEvent.click(screen.getByRole("button", { name: /^Water the plants/ }));
+    expect(screen.getByText("Lea does it every time.")).toBeInTheDocument();
   });
 
   it("says what is missing before adding a chore", async () => {
