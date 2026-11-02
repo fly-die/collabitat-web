@@ -3,6 +3,7 @@ import { API_BASE_URL } from "../config";
 export const SESSION_STORAGE_KEY = "collabitat.session";
 export const NETWORK_ERROR_CODE = "NETWORK_ERROR";
 export const UNAUTHORIZED_CODE = "UNAUTHORIZED";
+const NO_CONTENT_STATUS = 204;
 
 export class ApiError extends Error {
   constructor(
@@ -39,6 +40,10 @@ export async function request<T>(path: string, init?: RequestInit): Promise<T> {
     throw new ApiError(NETWORK_ERROR_CODE, "Can't reach the server. Try again in a moment.");
   }
 
+  // Turning notifications on or off answers with no body at all.
+  if (response.status === NO_CONTENT_STATUS) {
+    return undefined as T;
+  }
   const body = await response.json();
   if (!response.ok) {
     throw new ApiError(body.error ?? "UNKNOWN", body.message ?? "Something went wrong.");
