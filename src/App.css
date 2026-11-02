@@ -782,6 +782,109 @@
   color: var(--color-ink-muted);
 }
 
+/* Icon tiles at the start of chore and expense rows. */
+.item-icon {
+  display: inline-flex;
+  flex-shrink: 0;
+  align-items: center;
+  justify-content: center;
+  width: 2.25rem;
+  height: 2.25rem;
+  border-radius: var(--radius-panel);
+  background: var(--color-accent-tint);
+  color: var(--color-accent);
+}
+
+.expense--payment .item-icon {
+  background: var(--color-canvas);
+  color: var(--color-ink-muted);
+}
+
+.expense--payment,
+.chore__static {
+  gap: var(--space-3);
+}
+
+/* Dialogs: a sheet from the bottom on phones, centred on computers. */
+.sheet {
+  position: fixed;
+  inset: 0;
+  z-index: 50;
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  background: rgb(23 32 28 / 45%);
+  animation: sheet-fade 160ms ease-out;
+}
+
+.sheet__panel {
+  width: 100%;
+  max-height: 92dvh;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  padding-bottom: env(safe-area-inset-bottom, 0px);
+  border-radius: 1rem 1rem 0 0;
+  background: var(--color-canvas);
+  outline: none;
+  animation: sheet-up 200ms ease-out;
+}
+
+/* The grab handle tells a phone user this slides away. */
+.sheet__panel::before {
+  display: block;
+  width: 2.5rem;
+  height: 0.25rem;
+  margin: var(--space-2) auto 0;
+  border-radius: 1rem;
+  background: var(--color-line);
+  content: "";
+}
+
+.sheet .screen {
+  min-height: 0;
+  padding: var(--space-4) var(--space-5) var(--space-6);
+}
+
+body.has-sheet {
+  overflow: hidden;
+}
+
+@keyframes sheet-up {
+  from {
+    transform: translateY(100%);
+  }
+}
+
+@keyframes sheet-fade {
+  from {
+    opacity: 0;
+  }
+}
+
+@media (min-width: 56rem) {
+  .sheet {
+    align-items: center;
+  }
+
+  .sheet__panel {
+    max-width: 32rem;
+    max-height: 85vh;
+    border-radius: 1rem;
+    animation: sheet-fade 160ms ease-out;
+  }
+
+  .sheet__panel::before {
+    display: none;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .sheet,
+  .sheet__panel {
+    animation: none;
+  }
+}
+
 .household__top {
   display: flex;
   align-items: baseline;

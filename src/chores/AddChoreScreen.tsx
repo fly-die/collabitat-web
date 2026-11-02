@@ -79,7 +79,7 @@ export function AddChoreScreen({ household, onAdd, onBack }: AddChoreScreenProps
   return (
     <div className="screen">
       <button className="back-link" type="button" onClick={onBack}>
-        Back
+        Cancel
       </button>
       <h1 className="page-title">Add a chore</h1>
 

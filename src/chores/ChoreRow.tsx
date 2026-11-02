@@ -1,5 +1,6 @@
 import type { Household } from "../api/households-api";
 import type { Task } from "../api/tasks-api";
+import { ItemIcon, iconFor } from "../components/item-icons";
 import { daysUntil, describeDue } from "./chore-format";
 
 interface ChoreRowProps {
@@ -26,13 +27,16 @@ export function ChoreRow({ task, household, onOpen, onDone }: ChoreRowProps) {
   const isOverdue = daysUntil(task.nextDueOn) < 0;
   const turn = turnLabel(task, household);
   const content = (
-    <span className="chore__text">
+    <>
+      <ItemIcon name={iconFor(task.title, "chore")} />
+      <span className="chore__text">
       <span className="chore__title">{task.title}</span>
       <span className="chore__meta">
         {turn && <span className={isMine ? "chore__turn--mine" : undefined}>{turn}</span>}
         <span className={isOverdue ? "chore__due--overdue" : undefined}>{describeDue(task.nextDueOn)}</span>
       </span>
-    </span>
+      </span>
+    </>
   );
 
   return (

@@ -1,9 +1,11 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, type ReactNode } from "react";
 import type { ApiError } from "../api/client";
 import type { Expense, Money, NewExpense, NewSettlement, Settlement, Transfer } from "../api/expenses-api";
 import type { Household } from "../api/households-api";
 import { CountUpAmount } from "../components/CountUpAmount";
 import { UNDO_TIMEOUT_MS, UndoBar } from "../components/UndoBar";
+import { ItemIcon, iconFor } from "../components/item-icons";
+import { Sheet } from "../components/Sheet";
 import { ExpenseScreen } from "./ExpenseScreen";
 import { SettleUpScreen } from "./SettleUpScreen";
 import { formatAmount, formatDay } from "./money-format";
@@ -51,12 +53,13 @@ export function MoneyView({ household }: MoneyViewProps) {
     memberId === me ? "You" : (household.members.find((member) => member.id === memberId)?.name ?? "Someone");
   const backToOverview = () => setScreen({ name: "overview" });
 
-  // Every money screen starts at the top, not where the previous one was scrolled to.
+  // Settling up is its own page and starts at the top; dialogs leave the list where it was.
+  const isSettlingUp = screen.name === "settle-up";
   useEffect(() => {
     if (document.scrollingElement) {
       document.scrollingElement.scrollTop = 0;
     }
-  }, [screen]);
+  }, [isSettlingUp]);
 
   useEffect(() => {
     if (!undoable) {
@@ -79,35 +82,9 @@ export function MoneyView({ household }: MoneyViewProps) {
       </div>
     );
   }
-  if (screen.name === "add-expense") {
-    return <ExpenseScreen household={household} onSave={addExpense} onBack={backToOverview} />;
-  }
-
   async function deleteExpense(expense: Expense) {
     await removeExpense(expense.id);
     setUndoable({ message: `${expense.description} deleted.`, undo: () => addExpense(toNewExpense(expense)) });
-  }
-
-  if (screen.name === "expense") {
-    const { expense } = screen;
-    return (
-      <ExpenseScreen
-        household={household}
-        expense={expense}
-        onSave={async (changes) => {
-          await editExpense(expense.id, changes);
-          setUndoable({
-            message: `${expense.description} changed.`,
-            undo: () => editExpense(expense.id, toNewExpense(expense)),
-          });
-        }}
-        onDelete={async () => {
-          await deleteExpense(expense);
-          backToOverview();
-        }}
-        onBack={backToOverview}
-      />
-    );
   }
 
   const knownSettlementIds = new Set(state.money.settlements.map((settlement) => settlement.id));
@@ -146,6 +123,37 @@ export function MoneyView({ household }: MoneyViewProps) {
     });
   }
 
+  let sheet: ReactNode;
+  if (screen.name === "add-expense") {
+    sheet = (
+      <Sheet label="Add an expense" onClose={backToOverview}>
+        <ExpenseScreen household={household} onSave={addExpense} onBack={backToOverview} />
+      </Sheet>
+    );
+  } else if (screen.name === "expense") {
+    const { expense } = screen;
+    sheet = (
+      <Sheet label="Edit expense" onClose={backToOverview}>
+        <ExpenseScreen
+          household={household}
+          expense={expense}
+          onSave={async (changes) => {
+            await editExpense(expense.id, changes);
+            setUndoable({
+              message: `${expense.description} changed.`,
+              undo: () => editExpense(expense.id, toNewExpense(expense)),
+            });
+          }}
+          onDelete={async () => {
+            await deleteExpense(expense);
+            backToOverview();
+          }}
+          onBack={backToOverview}
+        />
+      </Sheet>
+    );
+  }
+
   const currentMoney = state.money;
   function leaveOverview(next: MoneyScreen) {
     setHeadlineStartCents(myBalance(currentMoney.transfers, me, nameOf).cents ?? 0);
@@ -153,7 +161,9 @@ export function MoneyView({ household }: MoneyViewProps) {
   }
 
   return (
-    <MoneyOverview
+    <>
+      <MoneyOverview
+      isBehindSheet={sheet !== undefined}
       household={household}
       money={state.money}
       nameOf={nameOf}
@@ -168,6 +178,8 @@ export function MoneyView({ household }: MoneyViewProps) {
         await action.undo();
       }}
     />
+      {sheet}
+    </>
   );
 }
 
@@ -207,6 +219,8 @@ type HistoryEntry =
   | { kind: "payment"; settlement: Settlement; day: string; createdAt: string };
 
 interface MoneyOverviewProps {
+  // A dialog is open over the list: keep it out of reach of taps, keys and screen readers.
+  isBehindSheet: boolean;
   household: Household;
   money: Money;
   nameOf: NameOf;
@@ -220,6 +234,7 @@ interface MoneyOverviewProps {
 }
 
 function MoneyOverview({
+  isBehindSheet,
   household,
   money,
   nameOf,
@@ -269,6 +284,7 @@ function MoneyOverview({
     return (
       <li key={expense.id} className="panel__row expense">
         <button className="expense__open" type="button" onClick={() => onOpenExpense(expense)}>
+          <ItemIcon name={iconFor(expense.description, "receipt")} />
           <span className="expense__text">
             <span className="expense__description">{expense.description}</span>
             <span className="expense__meta">
@@ -287,6 +303,7 @@ function MoneyOverview({
     const title = describePayment(settlement, me, nameOf);
     return (
       <li key={settlement.id} className="panel__row expense expense--payment">
+        <ItemIcon name="payment" />
         <span className="expense__text">
           <span className="expense__description">{title}</span>
           <span className="expense__meta">
@@ -311,7 +328,7 @@ function MoneyOverview({
     entry.kind === "payment" ? paymentRow(entry.settlement) : expenseRow(entry.expense);
 
   return (
-    <div className="screen money">
+    <div className="screen money" inert={isBehindSheet} aria-hidden={isBehindSheet || undefined}>
       <p className="eyebrow">Money</p>
       <Headline transfers={money.transfers} me={me} nameOf={nameOf} startFromCents={headlineStartCents} />
       {isHouseholdSquare && <p className="hint money__square">Everyone in {household.name} is square.</p>}

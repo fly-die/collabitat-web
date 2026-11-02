@@ -1,7 +1,8 @@
-import { useEffect, useState } from "react";
+import { useState, type ReactNode } from "react";
 import type { ApiError } from "../api/client";
 import type { Household } from "../api/households-api";
 import type { Task } from "../api/tasks-api";
+import { Sheet } from "../components/Sheet";
 import { UndoBar } from "../components/UndoBar";
 import { useUndoable } from "../components/useUndoable";
 import { formatDay } from "../money/money-format";
@@ -43,12 +44,6 @@ export function ChoresView({ household }: ChoresViewProps) {
     return rotation[0] === me ? "You do it every time." : `${capitalize(nameOf(rotation[0]))} does it every time.`;
   };
 
-  useEffect(() => {
-    if (document.scrollingElement) {
-      document.scrollingElement.scrollTop = 0;
-    }
-  }, [screen]);
-
   async function run(action: () => Promise<unknown>) {
     setError(undefined);
     try {
@@ -85,15 +80,21 @@ export function ChoresView({ household }: ChoresViewProps) {
       </div>
     );
   }
+  let sheet: ReactNode;
   if (screen.name === "add") {
-    return <AddChoreScreen household={household} onAdd={addChore} onBack={backToOverview} />;
+    sheet = (
+      <Sheet label="Add a chore" onClose={backToOverview}>
+        <AddChoreScreen household={household} onAdd={addChore} onBack={backToOverview} />
+      </Sheet>
+    );
   }
   if (screen.name === "chore") {
     const { task } = screen;
-    return (
+    sheet = (
+      <Sheet label={task.title} onClose={backToOverview}>
       <div className="screen">
         <button className="back-link" type="button" onClick={backToOverview}>
-          Back
+          Close
         </button>
         <h1 className="page-title">{task.title}</h1>
         <p className="chore-detail">
@@ -123,6 +124,7 @@ export function ChoresView({ household }: ChoresViewProps) {
           Delete chore
         </button>
       </div>
+      </Sheet>
     );
   }
 
@@ -148,8 +150,10 @@ export function ChoresView({ household }: ChoresViewProps) {
     </section>
   );
 
+  const isBehindSheet = sheet !== undefined;
   return (
-    <div className="screen chores">
+    <>
+    <div className="screen chores" inert={isBehindSheet} aria-hidden={isBehindSheet || undefined}>
       <p className="eyebrow">Chores</p>
       <h1 className="page-title page-title--large">{tasks.length === 0 ? "Nothing to track yet" : headline}</h1>
       {myDueCount > 0 && <p className="hint">{myTurnHint(myDueCount, due.length)}</p>}
@@ -184,5 +188,7 @@ export function ChoresView({ household }: ChoresViewProps) {
         />
       )}
     </div>
+    {sheet}
+    </>
   );
 }

@@ -124,6 +124,23 @@ describe("chores", () => {
     expect(screen.getByText("Lea does it every time.")).toBeInTheDocument();
   });
 
+  it("adds in a dialog over the list that Escape or a tap outside closes", async () => {
+    await openChores();
+
+    fireEvent.click(screen.getByRole("button", { name: "Add a chore" }));
+    const dialog = screen.getByRole("dialog", { name: "Add a chore" });
+    expect(dialog).toContainElement(screen.getByLabelText("What needs doing?"));
+    expect(screen.queryByRole("heading", { name: "Nothing to track yet" })).not.toBeInTheDocument();
+
+    fireEvent.keyDown(document, { key: "Escape" });
+    expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
+    expect(screen.getByRole("heading", { level: 1, name: "Nothing to track yet" })).toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole("button", { name: "Add a chore" }));
+    fireEvent.mouseDown(screen.getByRole("dialog").parentElement as HTMLElement);
+    expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
+  });
+
   it("says what is missing before adding a chore", async () => {
     await openChores();
 
