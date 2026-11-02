@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { UNAUTHORIZED_CODE, endSession, hasSession, type ApiError } from "../api/client";
+import { useLiveTopic } from "../live/live-updates";
 import { householdsApi, type Credentials, type Household } from "../api/households-api";
 import { clearInviteFromLocation, inviteCodeFromLocation } from "./invite-link";
 
@@ -22,6 +23,8 @@ export function useHousehold() {
     hasSession() ? { status: "loading" } : stateWithoutHousehold(),
   );
   const [loadAttempt, setLoadAttempt] = useState(0);
+  // A flatmate joined, left or was added: reload in place. Being removed myself ends the session.
+  useLiveTopic("household", () => setLoadAttempt((attempt) => attempt + 1));
 
   useEffect(() => {
     localStorage.removeItem(LEGACY_HOUSEHOLD_ID_KEY);

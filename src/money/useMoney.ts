@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import type { ApiError } from "../api/client";
+import { useLiveTopic } from "../live/live-updates";
 import { expensesApi, type Money, type NewExpense, type NewSettlement } from "../api/expenses-api";
 
 type MoneyState =
@@ -10,6 +11,8 @@ type MoneyState =
 export function useMoney() {
   const [state, setState] = useState<MoneyState>({ status: "loading" });
   const [loadAttempt, setLoadAttempt] = useState(0);
+  // A flatmate changed something: reload in place, without showing the loading state.
+  useLiveTopic("money", () => setLoadAttempt((attempt) => attempt + 1));
 
   useEffect(() => {
     let isCurrent = true;

@@ -10,6 +10,7 @@ import { LoginScreen } from "./accounts/LoginScreen";
 import { InstallHint } from "./install/InstallHint";
 import { ChoresView } from "./chores/ChoresView";
 import { TodayOverview } from "./home/TodayOverview";
+import { useLiveConnection } from "./live/live-updates";
 import { MoneySummary } from "./money/MoneySummary";
 import { MoneyView } from "./money/MoneyView";
 import { Tab, TabBar } from "./navigation/TabBar";
@@ -30,6 +31,7 @@ export function App() {
     addMember,
     removeMember,
   } = useHousehold();
+  useLiveConnection(state.status === "ready");
   const [entryScreen, setEntryScreen] = useState<EntryScreen>("welcome");
   const [currentTab, setCurrentTab] = useState<Tab>(Tab.Home);
 

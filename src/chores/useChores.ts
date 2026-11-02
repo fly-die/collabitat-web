@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import type { ApiError } from "../api/client";
+import { useLiveTopic } from "../live/live-updates";
 import { tasksApi, type NewTask, type Task, type Tasks } from "../api/tasks-api";
 import type { Undoable } from "../components/useUndoable";
 import { formatDay, todayIsoDate } from "../money/money-format";
@@ -12,6 +13,8 @@ type ChoresState =
 export function useChores() {
   const [state, setState] = useState<ChoresState>({ status: "loading" });
   const [loadAttempt, setLoadAttempt] = useState(0);
+  // A flatmate changed something: reload in place, without showing the loading state.
+  useLiveTopic("chores", () => setLoadAttempt((attempt) => attempt + 1));
 
   useEffect(() => {
     let isCurrent = true;
