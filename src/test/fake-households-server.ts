@@ -11,7 +11,10 @@ function json(status: number, body: unknown) {
 const INVITE_NOT_FOUND = { error: "INVITE_NOT_FOUND", message: "This invite link doesn't work." };
 
 // Mirrors the API's household, invite, session and expense rules closely enough for UI tests.
-export function createFakeHouseholdsServer() {
+// pushPublicKey: the server's notification key; without it notifications are off, like a real server without keys.
+export function createFakeHouseholdsServer({ pushPublicKey }: { pushPublicKey?: string } = {}) {
+  // Devices with notifications on: endpoint to member id.
+  const pushDevices = new Map<string, string>();
   const households = new Map<string, StoredHousehold>();
   const memberIdsByToken = new Map<string, string>();
   const accountsByEmail = new Map<string, { password: string; memberIds: string[] }>();
@@ -191,6 +194,12 @@ export function createFakeHouseholdsServer() {
     const body = init?.body ? JSON.parse(String(init.body)) : {};
     const name = String(body.name ?? "").trim();
 
+    if (pathname === "/push/public-key") {
+      return pushPublicKey
+        ? json(200, { publicKey: pushPublicKey })
+        : json(404, { error: "PUSH_DISABLED", message: "Notifications aren't set up on this server." });
+    }
+
     if (method === "POST" && pathname === "/households") {
       const problem = accountProblem(body);
       if (problem) {
@@ -264,6 +273,15 @@ export function createFakeHouseholdsServer() {
       }
       addAccount(body, currentMemberId);
       return json(201, view());
+    }
+
+    if (segments[1] === "push-subscription") {
+      if (method === "PUT") {
+        pushDevices.set(body.endpoint, currentMemberId);
+      } else {
+        pushDevices.delete(body.endpoint);
+      }
+      return new Response(null, { status: 204 });
     }
 
     if (segments[1] === "tasks") {
@@ -358,5 +376,5 @@ export function createFakeHouseholdsServer() {
     return token;
   }
 
-  return { households, handle, startSessionWithoutAccount };
+  return { households, handle, startSessionWithoutAccount, pushDevices };
 }

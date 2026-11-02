@@ -12,6 +12,8 @@ export default defineConfig({
     react(),
     VitePWA({
       registerType: "autoUpdate",
+      // Adds showing notifications and opening the app on tap to the generated service worker.
+      workbox: { importScripts: ["push-sw.js"] },
       pwaAssets: { config: true },
       manifest: {
         name: "Collabitat",

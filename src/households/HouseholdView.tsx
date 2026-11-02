@@ -13,7 +13,7 @@ interface HouseholdViewProps {
   onAddMember: (name: string) => Promise<void>;
   onRemoveMember: (memberId: string) => Promise<void>;
   onAddAccount: (credentials: Credentials) => Promise<void>;
-  onLogOut: () => void;
+  onOpenSettings: () => void;
   // Shown right under the household name, e.g. where I stand with money.
   summary?: ReactNode;
   footer?: ReactNode;
@@ -37,7 +37,7 @@ export function HouseholdView({
   onAddMember,
   onRemoveMember,
   onAddAccount,
-  onLogOut,
+  onOpenSettings,
   summary,
   footer,
 }: HouseholdViewProps) {
@@ -77,7 +77,12 @@ export function HouseholdView({
   return (
     <div className="screen household">
       <div className="household__main">
-        <p className="eyebrow">{TODAY_FORMAT.format(new Date())}</p>
+        <div className="household__top">
+          <p className="eyebrow">{TODAY_FORMAT.format(new Date())}</p>
+          <button className="link-button household__settings" type="button" onClick={onOpenSettings}>
+            Settings
+          </button>
+        </div>
         <h1 className="page-title page-title--large">{household.name}</h1>
         {summary}
 
@@ -185,11 +190,6 @@ export function HouseholdView({
           </div>
         )}
         {footer}
-        {household.currentMemberHasAccount && (
-          <button className="link-button log-out" type="button" onClick={onLogOut}>
-            Log out
-          </button>
-        )}
       </div>
 
       {removedMember && (

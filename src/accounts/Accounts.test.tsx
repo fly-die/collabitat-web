@@ -84,6 +84,7 @@ describe("accounts", () => {
     render(<App />);
     await startHousehold();
 
+    fireEvent.click(await screen.findByRole("button", { name: "Settings" }));
     fireEvent.click(await screen.findByRole("button", { name: "Log out" }));
 
     expect(await screen.findByRole("button", { name: "Start a household" })).toBeInTheDocument();
@@ -95,13 +96,14 @@ describe("accounts", () => {
     render(<App />);
 
     expect(await screen.findByRole("heading", { name: "Add your email to log in anywhere" })).toBeInTheDocument();
-    expect(screen.queryByRole("button", { name: "Log out" })).not.toBeInTheDocument();
     type("Email", "mia@example.com");
     type("Password", PASSWORD);
     fireEvent.click(screen.getByRole("button", { name: "Save account" }));
 
-    expect(await screen.findByRole("button", { name: "Log out" })).toBeInTheDocument();
+    expect(await screen.findByRole("heading", { level: 1, name: "Langstrasse 12" })).toBeInTheDocument();
     expect(screen.queryByRole("heading", { name: "Add your email to log in anywhere" })).not.toBeInTheDocument();
+    fireEvent.click(screen.getByRole("button", { name: "Settings" }));
+    expect(await screen.findByRole("button", { name: "Log out" })).toBeInTheDocument();
   });
 
   it("lets me log in instead when an invite opens on a new device", async () => {

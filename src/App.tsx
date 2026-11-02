@@ -11,6 +11,8 @@ import { InstallHint } from "./install/InstallHint";
 import { ChoresView } from "./chores/ChoresView";
 import { TodayOverview } from "./home/TodayOverview";
 import { useLiveConnection } from "./live/live-updates";
+import { turnOffOnThisDevice } from "./notifications/useNotifications";
+import { SettingsScreen } from "./settings/SettingsScreen";
 import { MoneySummary } from "./money/MoneySummary";
 import { MoneyView } from "./money/MoneyView";
 import { Tab, TabBar } from "./navigation/TabBar";
@@ -45,7 +47,21 @@ export function App() {
     setEntryScreen("log-in");
   }
 
+  // Settings opens over Home; any tab change leaves it.
+  const [isSettingsOpen, setIsSettingsOpen] = useState(false);
+  const openTab = (tab: Tab) => {
+    setIsSettingsOpen(false);
+    setCurrentTab(tab);
+  };
+
   async function logOutToWelcome() {
+    // A shared or handed-on phone must not keep getting this household's notifications.
+    try {
+      await turnOffOnThisDevice();
+    } catch {
+      // Logging out goes ahead; the server forgets the device once the push service reports it gone.
+    }
+    setIsSettingsOpen(false);
     setEntryScreen("welcome");
     setCurrentTab(Tab.Home);
     await logOut();
@@ -95,17 +111,21 @@ export function App() {
         </div>
       )}
 
-      {state.status === "ready" && currentTab === Tab.Home && (
+      {state.status === "ready" && currentTab === Tab.Home && isSettingsOpen && (
+        <SettingsScreen household={state.household} onBack={() => setIsSettingsOpen(false)} onLogOut={logOutToWelcome} />
+      )}
+
+      {state.status === "ready" && currentTab === Tab.Home && !isSettingsOpen && (
         <HouseholdView
           household={state.household}
           onAddMember={addMember}
           onRemoveMember={removeMember}
           onAddAccount={addAccount}
-          onLogOut={logOutToWelcome}
+          onOpenSettings={() => setIsSettingsOpen(true)}
           summary={
             <>
-              <TodayOverview household={state.household} onOpenChores={() => setCurrentTab(Tab.Chores)} />
-              <MoneySummary household={state.household} onOpenMoney={() => setCurrentTab(Tab.Money)} />
+              <TodayOverview household={state.household} onOpenChores={() => openTab(Tab.Chores)} />
+              <MoneySummary household={state.household} onOpenMoney={() => openTab(Tab.Money)} />
             </>
           }
           footer={<InstallHint />}
@@ -116,7 +136,7 @@ export function App() {
 
       {state.status === "ready" && currentTab === Tab.Chores && <ChoresView household={state.household} />}
 
-      {state.status === "ready" && <TabBar currentTab={currentTab} onSelect={setCurrentTab} />}
+      {state.status === "ready" && <TabBar currentTab={currentTab} onSelect={openTab} />}
     </main>
   );
 }
