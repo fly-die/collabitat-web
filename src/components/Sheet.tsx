@@ -1,4 +1,4 @@
-import { useEffect, useRef, type ReactNode } from "react";
+import { useEffect, useRef, useState, type ReactNode } from "react";
 import { createPortal } from "react-dom";
 
 interface SheetProps {
@@ -15,13 +15,14 @@ const FOCUSABLE = "a[href], button:not([disabled]), input:not([disabled]), selec
 // focus goes back to whatever opened it.
 export function Sheet({ label, onClose, children }: SheetProps) {
   const panelRef = useRef<HTMLDivElement>(null);
+  // Read while rendering: once the screen behind turns inert, the browser has already moved focus away.
+  const [opener] = useState(() => (document.activeElement instanceof HTMLElement ? document.activeElement : undefined));
   const latestOnClose = useRef(onClose);
   useEffect(() => {
     latestOnClose.current = onClose;
   });
 
   useEffect(() => {
-    const opener = document.activeElement instanceof HTMLElement ? document.activeElement : undefined;
     const panel = panelRef.current;
     if (panel && !panel.contains(document.activeElement)) {
       panel.focus();
@@ -51,9 +52,11 @@ export function Sheet({ label, onClose, children }: SheetProps) {
     return () => {
       document.removeEventListener("keydown", onKeyDown);
       document.body.classList.remove("has-sheet");
-      opener?.focus();
+      if (opener?.isConnected) {
+        opener.focus();
+      }
     };
-  }, []);
+  }, [opener]);
 
   return createPortal(
     <div
