@@ -817,7 +817,17 @@
   animation: sheet-fade 160ms ease-out;
 }
 
+.sheet__backdrop {
+  position: absolute;
+  inset: 0;
+  padding: 0;
+  border: 0;
+  background: none;
+  cursor: default;
+}
+
 .sheet__panel {
+  position: relative;
   width: 100%;
   max-height: 92dvh;
   overflow-y: auto;

@@ -59,14 +59,9 @@ export function Sheet({ label, onClose, children }: SheetProps) {
   }, [opener]);
 
   return createPortal(
-    <div
-      className="sheet"
-      onMouseDown={(event) => {
-        if (event.target === event.currentTarget) {
-          onClose();
-        }
-      }}
-    >
+    <div className="sheet">
+      {/* The dimmed area behind the dialog closes it; keyboards use Escape, so it stays out of the tab order. */}
+      <button className="sheet__backdrop" type="button" tabIndex={-1} aria-label="Close" onClick={onClose} />
       <div ref={panelRef} className="sheet__panel" role="dialog" aria-modal="true" aria-label={label} tabIndex={-1}>
         {children}
       </div>

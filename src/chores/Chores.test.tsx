@@ -137,7 +137,7 @@ describe("chores", () => {
     expect(screen.getByRole("heading", { level: 1, name: "Nothing to track yet" })).toBeInTheDocument();
 
     fireEvent.click(screen.getByRole("button", { name: "Add a chore" }));
-    fireEvent.mouseDown(screen.getByRole("dialog").parentElement as HTMLElement);
+    fireEvent.click(screen.getByRole("button", { name: "Close" }));
     expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
   });
 
