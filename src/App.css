@@ -942,6 +942,28 @@ body.has-sheet {
   font-weight: 700;
 }
 
+.shopping__add {
+  display: flex;
+  gap: var(--space-2);
+  margin-bottom: var(--space-4);
+}
+
+.shopping__add .text-input {
+  flex: 1;
+  min-width: 0;
+}
+
+.shopping__group + .shopping__group {
+  margin-top: var(--space-4);
+}
+
+.shopping__category {
+  margin: 0 0 var(--space-2);
+  color: var(--color-ink-muted);
+  font-size: var(--font-size-small);
+  font-weight: 700;
+}
+
 .recipe__ingredients {
   margin: 0 0 var(--space-2);
   padding-left: var(--space-5);

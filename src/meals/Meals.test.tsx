@@ -84,6 +84,31 @@ describe("meals", () => {
     expect(await screen.findByRole("button", { name: /^TodayRisottoYou cook$/ })).toBeInTheDocument();
   });
 
+  it("lists what the week's dinners need by shop category, and items added by hand with undo", async () => {
+    await openMeals();
+    expect(await screen.findByText(/what they need shows up here/)).toBeInTheDocument();
+
+    await addRecipe("Pasta", "500 g pasta");
+    fireEvent.click(screen.getByRole("button", { name: /^Today/ }));
+    fireEvent.click(within(screen.getByRole("dialog")).getByRole("button", { name: "Pasta" }));
+    fireEvent.click(screen.getByRole("button", { name: "Save dinner" }));
+    await screen.findByRole("button", { name: /^TodayPasta/ });
+
+    type("Add to the list", "2 l milk");
+    fireEvent.click(screen.getByRole("button", { name: "Add" }));
+
+    expect(await screen.findByRole("list", { name: "Dairy and eggs" })).toHaveTextContent("2 l milkAdded by hand");
+    expect(await screen.findByRole("list", { name: "Pantry" })).toHaveTextContent("500 g pastaFor Pasta");
+    const categories = screen.getAllByRole("heading", { level: 3 }).map((heading) => heading.textContent);
+    expect(categories).toEqual(["Dairy and eggs", "Pantry"]);
+
+    fireEvent.click(screen.getByRole("button", { name: "Remove 2 l milk" }));
+    expect(await screen.findByRole("status")).toHaveTextContent("2 l milk removed.");
+    await vi.waitFor(() => expect(screen.queryByRole("list", { name: "Dairy and eggs" })).not.toBeInTheDocument());
+    fireEvent.click(screen.getByRole("button", { name: "Undo" }));
+    expect(await screen.findByRole("list", { name: "Dairy and eggs" })).toBeInTheDocument();
+  });
+
   it("clears a day with undo, and says what's missing before saving", async () => {
     await openMeals();
     fireEvent.click(screen.getByRole("button", { name: /^Today/ }));

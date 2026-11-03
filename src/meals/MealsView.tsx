@@ -8,6 +8,7 @@ import { UndoBar } from "../components/UndoBar";
 import { useUndoable } from "../components/useUndoable";
 import { formatDay, todayIsoDate } from "../money/money-format";
 import { describeIngredient, describeWeek, ingredientLine, mondayOf, weekDays, addDays, DAYS_IN_WEEK } from "./week";
+import { ShoppingList } from "./ShoppingList";
 import { useMeals } from "./useMeals";
 
 const DEFAULT_SERVINGS = "4";
@@ -184,6 +185,8 @@ export function MealsView({ household }: MealsViewProps) {
             );
           })}
         </ul>
+
+        <ShoppingList monday={monday} onUndoable={offerUndo} />
 
         <section className="chores__group" aria-labelledby="recipes-heading">
           <h2 id="recipes-heading" className="section-title">

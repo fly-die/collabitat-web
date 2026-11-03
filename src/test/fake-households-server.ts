@@ -18,6 +18,7 @@ export function createFakeHouseholdsServer({ pushPublicKey }: { pushPublicKey?: 
   const pushDevices = new Map<string, string>();
   const recipesByHouseholdId = new Map<string, Recipe[]>();
   const mealsByHouseholdId = new Map<string, PlannedMeal[]>();
+  const extrasByHouseholdId = new Map<string, { id: string; line: string }[]>();
 
   // Like the API: seven days of dinners from `from`, and all recipes. Ingredients keep their whole line as the name.
   function weekOf(household: StoredHousehold, from: string) {
@@ -286,6 +287,33 @@ export function createFakeHouseholdsServer({ pushPublicKey }: { pushPublicKey?: 
       }
       addAccount(body, currentMemberId);
       return json(201, view());
+    }
+
+    if (segments[1] === "shopping-list") {
+      const from = new URL(String(input)).searchParams.get("from") ?? "";
+      const extras = extrasByHouseholdId.get(household.id) ?? [];
+      if (method === "POST") {
+        extras.push({ id: crypto.randomUUID(), line: body.line.trim() });
+      }
+      if (method === "DELETE") {
+        extrasByHouseholdId.set(household.id, extras.filter((extra) => extra.id !== segments[3]));
+      } else {
+        extrasByHouseholdId.set(household.id, extras);
+      }
+      // A small stand-in for the API's merging: one row per ingredient line, a few known categories.
+      const categoryOf = (name: string) => (/milk|milch/i.test(name) ? "dairy" : /pasta/i.test(name) ? "pantry" : "other");
+      const { meals, recipes } = weekOf(household, from);
+      const fromDinners = meals.flatMap((meal) =>
+        (recipes.find((recipe) => recipe.id === meal.recipeId)?.ingredients ?? []).map((ingredient) => ({
+          ...ingredient, category: categoryOf(ingredient.name), forDinners: [meal.title], extraId: null,
+        })),
+      );
+      const byHand = (extrasByHouseholdId.get(household.id) ?? []).map((extra) => ({
+        name: extra.line, quantity: null, unit: null, category: categoryOf(extra.line), forDinners: [], extraId: extra.id,
+      }));
+      const order = ["produce", "bakery", "dairy", "meat-fish", "pantry", "frozen", "drinks", "household", "other"];
+      const items = [...fromDinners, ...byHand].sort((first, second) => order.indexOf(first.category) - order.indexOf(second.category));
+      return json(method === "POST" ? 201 : 200, { from, items });
     }
 
     if (segments[1] === "meals" || segments[1] === "recipes") {
