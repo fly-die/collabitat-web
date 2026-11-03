@@ -1115,6 +1115,11 @@ select.text-input {
     no-repeat right var(--space-3) center / 1.25rem;
 }
 
+/* The arrow is an image, so it can't follow the colour tokens; dark gets its own in muted ink. */
+:root[data-theme="dark"] select.text-input {
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23A3B2AA' stroke-width='2'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E");
+}
+
 .split-picker {
   display: flex;
   flex-wrap: wrap;
