@@ -10,6 +10,8 @@ import { LoginScreen } from "./accounts/LoginScreen";
 import { InstallHint } from "./install/InstallHint";
 import { ChoresView } from "./chores/ChoresView";
 import { TodayOverview } from "./home/TodayOverview";
+import { TonightDinner } from "./home/TonightDinner";
+import { MealsView } from "./meals/MealsView";
 import { useLiveConnection } from "./live/live-updates";
 import { turnOffOnThisDevice } from "./notifications/useNotifications";
 import { SettingsScreen } from "./settings/SettingsScreen";
@@ -127,6 +129,7 @@ export function App() {
           summary={
             <>
               <TodayOverview household={state.household} onOpenChores={() => openTab(Tab.Chores)} />
+              <TonightDinner household={state.household} onOpenMeals={() => openTab(Tab.Meals)} />
               <MoneySummary household={state.household} onOpenMoney={() => openTab(Tab.Money)} />
             </>
           }
@@ -137,6 +140,8 @@ export function App() {
       {state.status === "ready" && currentTab === Tab.Money && <MoneyView household={state.household} />}
 
       {state.status === "ready" && currentTab === Tab.Chores && <ChoresView household={state.household} />}
+
+      {state.status === "ready" && currentTab === Tab.Meals && <MealsView household={state.household} />}
 
       {state.status === "ready" && <TabBar currentTab={currentTab} onSelect={openTab} />}
     </main>

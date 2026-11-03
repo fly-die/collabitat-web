@@ -1,5 +1,6 @@
 import type { Expense, NewExpense, Settlement, Transfer } from "../api/expenses-api";
 import type { Household } from "../api/households-api";
+import type { PlannedMeal, Recipe } from "../api/meals-api";
 import type { NewTask, Task } from "../api/tasks-api";
 
 type StoredHousehold = Omit<Household, "currentMemberId" | "currentMemberHasAccount">;
@@ -15,6 +16,18 @@ const INVITE_NOT_FOUND = { error: "INVITE_NOT_FOUND", message: "This invite link
 export function createFakeHouseholdsServer({ pushPublicKey }: { pushPublicKey?: string } = {}) {
   // Devices with notifications on: endpoint to member id.
   const pushDevices = new Map<string, string>();
+  const recipesByHouseholdId = new Map<string, Recipe[]>();
+  const mealsByHouseholdId = new Map<string, PlannedMeal[]>();
+
+  // Like the API: seven days of dinners from `from`, and all recipes. Ingredients keep their whole line as the name.
+  function weekOf(household: StoredHousehold, from: string) {
+    const to = new Date(Date.parse(`${from}T00:00:00Z`) + 6 * 86_400_000).toISOString().slice(0, 10);
+    const meals = (mealsByHouseholdId.get(household.id) ?? [])
+      .filter((meal) => meal.date >= from && meal.date <= to)
+      .sort((first, second) => first.date.localeCompare(second.date));
+    const recipes = [...(recipesByHouseholdId.get(household.id) ?? [])].sort((first, second) => first.title.localeCompare(second.title));
+    return { from, meals, recipes };
+  }
   const households = new Map<string, StoredHousehold>();
   const memberIdsByToken = new Map<string, string>();
   const accountsByEmail = new Map<string, { password: string; memberIds: string[] }>();
@@ -273,6 +286,31 @@ export function createFakeHouseholdsServer({ pushPublicKey }: { pushPublicKey?: 
       }
       addAccount(body, currentMemberId);
       return json(201, view());
+    }
+
+    if (segments[1] === "meals" || segments[1] === "recipes") {
+      const from = new URL(String(input)).searchParams.get("from") ?? "";
+      const recipes = recipesByHouseholdId.get(household.id) ?? [];
+      const meals = (mealsByHouseholdId.get(household.id) ?? []).filter((meal) => meal.date !== segments[2]);
+      if (segments[1] === "recipes" && method === "POST") {
+        const ingredients = body.ingredientLines
+          .map((line: string) => line.trim())
+          .filter(Boolean)
+          .map((name: string) => ({ quantity: null, unit: null, name }));
+        recipesByHouseholdId.set(household.id, [...recipes, { id: crypto.randomUUID(), title: body.title.trim(), servings: body.servings, ingredients }]);
+        return json(201, weekOf(household, from));
+      }
+      if (segments[1] === "recipes" && method === "DELETE") {
+        recipesByHouseholdId.set(household.id, recipes.filter((recipe) => recipe.id !== segments[2]));
+      }
+      if (segments[1] === "meals" && method === "PUT") {
+        const recipe = recipes.find((candidate) => candidate.id === body.recipeId);
+        meals.push({ date: segments[2], title: body.title || recipe?.title || "", recipeId: recipe?.id ?? null, cookMemberId: body.cookMemberId ?? null });
+      }
+      if (segments[1] === "meals" && method !== "GET") {
+        mealsByHouseholdId.set(household.id, meals);
+      }
+      return json(200, weekOf(household, from));
     }
 
     if (segments[1] === "push-subscription") {

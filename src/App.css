@@ -895,6 +895,64 @@ body.has-sheet {
   }
 }
 
+.meals__weeks {
+  margin-top: var(--space-5);
+}
+
+.meals__week {
+  margin-top: var(--space-4);
+}
+
+.meals__day {
+  color: var(--color-ink-muted);
+  font-size: var(--font-size-small);
+  font-weight: 700;
+}
+
+.meals__empty {
+  color: var(--color-ink-muted);
+}
+
+.meals .chores__group .button {
+  margin-bottom: var(--space-4);
+}
+
+.meals__picks {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+  margin-top: var(--space-3);
+}
+
+.meals__pick {
+  min-height: var(--touch-target);
+  padding: 0 var(--space-4);
+  border: 1px solid var(--color-line);
+  border-radius: var(--radius-large);
+  background: var(--color-surface);
+  color: var(--color-ink);
+  font: inherit;
+  cursor: pointer;
+}
+
+.meals__pick--chosen {
+  border-color: var(--color-accent);
+  background: var(--color-accent-tint);
+  color: var(--color-accent);
+  font-weight: 700;
+}
+
+.recipe__ingredients {
+  margin: 0 0 var(--space-2);
+  padding-left: var(--space-5);
+  line-height: 1.8;
+}
+
+.recipe__lines {
+  min-height: 9rem;
+  resize: vertical;
+}
+
 .household__top {
   display: flex;
   align-items: baseline;
