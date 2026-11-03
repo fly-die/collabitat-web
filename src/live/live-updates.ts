@@ -2,9 +2,9 @@ import { useEffect, useRef } from "react";
 import { SESSION_STORAGE_KEY } from "../api/client";
 import { API_BASE_URL } from "../config";
 
-export type LiveTopic = "money" | "chores" | "household";
+export type LiveTopic = "money" | "chores" | "household" | "meals";
 
-const ALL_TOPICS: LiveTopic[] = ["money", "chores", "household"];
+const ALL_TOPICS: LiveTopic[] = ["money", "chores", "household", "meals"];
 const LIVE_PATH = "/household/live";
 // The server closes with this when the session is no longer valid; retrying won't help then.
 const CLOSE_UNAUTHORIZED = 4401;
