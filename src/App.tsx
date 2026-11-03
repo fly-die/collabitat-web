@@ -13,6 +13,7 @@ import { TodayOverview } from "./home/TodayOverview";
 import { useLiveConnection } from "./live/live-updates";
 import { turnOffOnThisDevice } from "./notifications/useNotifications";
 import { SettingsScreen } from "./settings/SettingsScreen";
+import { useTheme } from "./settings/useTheme";
 import { MoneySummary } from "./money/MoneySummary";
 import { MoneyView } from "./money/MoneyView";
 import { Tab, TabBar } from "./navigation/TabBar";
@@ -34,6 +35,7 @@ export function App() {
     removeMember,
   } = useHousehold();
   useLiveConnection(state.status === "ready");
+  const theme = useTheme();
   const [entryScreen, setEntryScreen] = useState<EntryScreen>("welcome");
   const [currentTab, setCurrentTab] = useState<Tab>(Tab.Home);
 
@@ -112,7 +114,7 @@ export function App() {
       )}
 
       {state.status === "ready" && currentTab === Tab.Home && isSettingsOpen && (
-        <SettingsScreen household={state.household} onBack={() => setIsSettingsOpen(false)} onLogOut={logOutToWelcome} />
+        <SettingsScreen household={state.household} theme={theme} onBack={() => setIsSettingsOpen(false)} onLogOut={logOutToWelcome} />
       )}
 
       {state.status === "ready" && currentTab === Tab.Home && !isSettingsOpen && (

@@ -1,8 +1,16 @@
 import type { Household } from "../api/households-api";
 import { useNotifications, type NotificationStatus } from "../notifications/useNotifications";
+import type { Theme, ThemeChoice } from "./useTheme";
+
+const THEME_OPTIONS: { choice: ThemeChoice; label: string }[] = [
+  { choice: "system", label: "Match device" },
+  { choice: "light", label: "Light" },
+  { choice: "dark", label: "Dark" },
+];
 
 interface SettingsScreenProps {
   household: Household;
+  theme: Theme;
   onBack: () => void;
   onLogOut: () => void;
 }
@@ -18,7 +26,7 @@ const EXPLANATIONS: Partial<Record<NotificationStatus, string>> = {
   blocked: "Notifications are blocked for Collabitat. Allow them in your browser's site settings, then come back here.",
 };
 
-export function SettingsScreen({ household, onBack, onLogOut }: SettingsScreenProps) {
+export function SettingsScreen({ household, theme, onBack, onLogOut }: SettingsScreenProps) {
   const { status, isBusy, error, turnOn, turnOff, checkAgain } = useNotifications();
   const me = household.members.find((member) => member.id === household.currentMemberId);
   const isOn = status === "on";
@@ -33,6 +41,25 @@ export function SettingsScreen({ household, onBack, onLogOut }: SettingsScreenPr
       <p className="settings__who">
         {me?.name} in {household.name}
       </p>
+
+      <section aria-labelledby="appearance-heading">
+        <h2 id="appearance-heading" className="section-title">
+          Appearance
+        </h2>
+        <fieldset className="segmented" aria-labelledby="appearance-heading">
+          {THEME_OPTIONS.map(({ choice, label }) => (
+            <label key={choice} className="segmented__option">
+              <input
+                type="radio"
+                name="theme"
+                checked={theme.choice === choice}
+                onChange={() => theme.choose(choice)}
+              />
+              {label}
+            </label>
+          ))}
+        </fieldset>
+      </section>
 
       <section aria-labelledby="notifications-heading">
         <h2 id="notifications-heading" className="section-title">

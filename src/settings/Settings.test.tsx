@@ -125,6 +125,28 @@ describe("settings", () => {
     expect(await screen.findByText(/^Notifications are blocked for Collabitat\./)).toBeInTheDocument();
   });
 
+  it("switches the look between light, dark and the device's, and remembers it", async () => {
+    const prefersDark = { matches: true, addEventListener: vi.fn(), removeEventListener: vi.fn() };
+    vi.stubGlobal("matchMedia", vi.fn(() => prefersDark));
+    await openSettings();
+    const theme = () => document.documentElement.dataset.theme;
+
+    expect(screen.getByRole("radio", { name: "Match device" })).toBeChecked();
+    expect(theme()).toBe("dark");
+
+    fireEvent.click(screen.getByRole("radio", { name: "Light" }));
+    expect(theme()).toBe("light");
+    expect(localStorage.getItem("collabitat.theme")).toBe("light");
+
+    fireEvent.click(screen.getByRole("radio", { name: "Dark" }));
+    expect(theme()).toBe("dark");
+
+    prefersDark.matches = false;
+    fireEvent.click(screen.getByRole("radio", { name: "Match device" }));
+    expect(theme()).toBe("light");
+    expect(prefersDark.addEventListener).toHaveBeenCalledWith("change", expect.any(Function));
+  });
+
   it("turns notifications off on this device when I log out", async () => {
     const push = installFakePush();
     await openSettings();
