@@ -9,6 +9,12 @@
   --color-divider: #e2e8e4;
   --color-done: #e4ebe6;
   --color-accent-tint: #e4efeb;
+  /* The brand green and what sits on it stay the same in both themes. */
+  --color-brand: #1f6f5c;
+  --color-on-brand: #ffffff;
+  --color-backdrop: rgb(23 32 28 / 45%);
+  --color-shadow: rgb(23 32 28 / 25%);
+  color-scheme: light;
   --motion-quick: 120ms;
   --motion-calm: 220ms;
   --ease-out: cubic-bezier(0.23, 1, 0.32, 1);
@@ -32,4 +38,22 @@
   --radius: 0.5rem;
   --radius-large: 0.75rem;
   --radius-panel: 0.875rem;
+}
+
+/* Dark: a calm, slightly green-tinted dark rather than an inverted light theme. Surfaces sit a step
+   above the canvas, text is soft white, and accent and owe colours are lifted to keep their contrast. */
+:root[data-theme="dark"] {
+  --color-ink: #e6ede9;
+  --color-ink-muted: #a3b2aa;
+  --color-surface: #18211d;
+  --color-canvas: #101613;
+  --color-accent: #6cc2a8;
+  --color-owe: #e8956a;
+  --color-line: #2c3832;
+  --color-divider: #222c27;
+  --color-done: #1e2a25;
+  --color-accent-tint: #1d3029;
+  --color-backdrop: rgb(0 0 0 / 60%);
+  --color-shadow: rgb(0 0 0 / 50%);
+  color-scheme: dark;
 }

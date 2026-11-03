@@ -86,8 +86,8 @@
   flex-direction: column;
   min-height: 58dvh;
   padding: calc(var(--space-8) + env(safe-area-inset-top)) var(--space-6) var(--space-6);
-  background: var(--color-accent);
-  color: var(--color-surface);
+  background: var(--color-brand);
+  color: var(--color-on-brand);
 }
 
 .welcome__logo {
@@ -813,7 +813,7 @@
   display: flex;
   align-items: flex-end;
   justify-content: center;
-  background: rgb(23 32 28 / 45%);
+  background: var(--color-backdrop);
   animation: sheet-fade 160ms ease-out;
 }
 
@@ -906,6 +906,47 @@ body.has-sheet {
   min-height: var(--touch-target);
 }
 
+/* Three choices side by side; the picked one sits on the surface like a raised key. */
+.segmented {
+  display: flex;
+  gap: var(--space-1);
+  margin: 0;
+  padding: var(--space-1);
+  border: 1px solid var(--color-line);
+  border-radius: var(--radius-panel);
+  background: var(--color-canvas);
+}
+
+.segmented__option {
+  position: relative;
+  display: flex;
+  flex: 1;
+  align-items: center;
+  justify-content: center;
+  min-height: var(--touch-target);
+  border-radius: var(--radius-large);
+  color: var(--color-ink-muted);
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.segmented__option input {
+  position: absolute;
+  opacity: 0;
+  pointer-events: none;
+}
+
+.segmented__option:has(input:checked) {
+  background: var(--color-surface);
+  box-shadow: 0 1px 2px var(--color-shadow);
+  color: var(--color-ink);
+}
+
+.segmented__option:has(input:focus-visible) {
+  outline: 2px solid var(--color-accent);
+  outline-offset: 2px;
+}
+
 .settings__who {
   margin: 0 0 var(--space-2);
   color: var(--color-ink-muted);
@@ -993,7 +1034,7 @@ body.has-sheet {
   height: 1.625rem;
   border-radius: 50%;
   background: var(--color-surface);
-  box-shadow: 0 1px 2px rgb(23 32 28 / 25%);
+  box-shadow: 0 1px 2px var(--color-shadow);
   transition: transform 150ms ease-out;
 }
 
