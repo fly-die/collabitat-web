@@ -109,6 +109,32 @@ describe("meals", () => {
     expect(await screen.findByRole("list", { name: "Dairy and eggs" })).toBeInTheDocument();
   });
 
+  it("ignores an empty item and says why the server refused one", async () => {
+    await openMeals();
+    await screen.findByText(/what they need shows up here/);
+    const serve = globalThis.fetch;
+    const added: string[] = [];
+    vi.stubGlobal(
+      "fetch",
+      vi.fn((input: RequestInfo | URL, init?: RequestInit) => {
+        if (String(input).includes("/shopping-list/items")) {
+          added.push(String(init?.body));
+          return Promise.resolve(
+            new Response(JSON.stringify({ error: "INVALID_INGREDIENTS", message: "Write the item in 1 to 100 characters." }), { status: 400 }),
+          );
+        }
+        return serve(input, init);
+      }),
+    );
+
+    fireEvent.click(screen.getByRole("button", { name: "Add" }));
+    expect(added).toEqual([]);
+
+    type("Add to the list", "x".repeat(101));
+    fireEvent.click(screen.getByRole("button", { name: "Add" }));
+    expect(await screen.findByRole("alert")).toHaveTextContent("Write the item in 1 to 100 characters.");
+  });
+
   it("clears a day with undo, and says what's missing before saving", async () => {
     await openMeals();
     fireEvent.click(screen.getByRole("button", { name: /^Today/ }));
