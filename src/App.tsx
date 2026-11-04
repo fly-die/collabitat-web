@@ -9,6 +9,7 @@ import { useHousehold } from "./households/useHousehold";
 import { LoginScreen } from "./accounts/LoginScreen";
 import { InstallHint } from "./install/InstallHint";
 import { ChoresView } from "./chores/ChoresView";
+import { ShoppingNow } from "./home/ShoppingNow";
 import { TodayOverview } from "./home/TodayOverview";
 import { TonightDinner } from "./home/TonightDinner";
 import { MealsView } from "./meals/MealsView";
@@ -128,6 +129,7 @@ export function App() {
           onOpenSettings={() => setIsSettingsOpen(true)}
           summary={
             <>
+              <ShoppingNow household={state.household} onOpenMeals={() => openTab(Tab.Meals)} />
               <TodayOverview household={state.household} onOpenChores={() => openTab(Tab.Chores)} />
               <TonightDinner household={state.household} onOpenMeals={() => openTab(Tab.Meals)} />
               <MoneySummary household={state.household} onOpenMoney={() => openTab(Tab.Money)} />
