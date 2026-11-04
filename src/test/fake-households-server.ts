@@ -22,6 +22,11 @@ export function createFakeHouseholdsServer({ pushPublicKey }: { pushPublicKey?: 
   const tripsByHouseholdId = new Map<string, { shopperMemberId: string; from: string; startedAt: string }>();
   // Ticked items as "<week>|<item key>".
   const checksByHouseholdId = new Map<string, Set<string>>();
+  const calendarColumnsByHouseholdId = new Map<string, { id: string; name: string; createdAt: string }[]>();
+  const calendarEntriesByHouseholdId = new Map<
+    string,
+    { id: string; title: string; day: string; time: string | null; columnId: string | null; createdAt: string }[]
+  >();
 
   // Like the API: seven days of dinners from `from`, and all recipes. Ingredients keep their whole line as the name.
   function weekOf(household: StoredHousehold, from: string) {
@@ -311,6 +316,54 @@ export function createFakeHouseholdsServer({ pushPublicKey }: { pushPublicKey?: 
       }
       addAccount(body, currentMemberId);
       return json(201, view());
+    }
+
+    if (segments[1] === "calendar") {
+      const columns = calendarColumnsByHouseholdId.get(household.id) ?? [];
+      const entries = calendarEntriesByHouseholdId.get(household.id) ?? [];
+      const [, , kind, id] = segments;
+      if (method === "GET") {
+        const from = new URL(String(input)).searchParams.get("from") ?? "";
+        const to = new Date(Date.parse(`${from}T00:00:00Z`) + 27 * 86_400_000).toISOString().slice(0, 10);
+        const inRange = entries
+          .filter((entry) => entry.day >= from && entry.day <= to)
+          .sort((first, second) => first.day.localeCompare(second.day) || (first.time ?? "").localeCompare(second.time ?? ""));
+        return json(200, { from, to, columns, entries: inRange });
+      }
+      if (kind === "columns" && method === "POST") {
+        if (!name) {
+          return json(400, { error: "INVALID_COLUMN_NAME", message: "Give the column a name of up to 30 characters." });
+        }
+        const column = { id: crypto.randomUUID(), name, createdAt: new Date().toISOString() };
+        calendarColumnsByHouseholdId.set(household.id, [...columns, column]);
+        return json(201, { column });
+      }
+      if (kind === "columns" && method === "DELETE") {
+        const column = columns.find((candidate) => candidate.id === id);
+        const upcoming = entries.filter((entry) => entry.columnId === id).length;
+        if (column && upcoming > 0) {
+          return json(409, { error: "COLUMN_HAS_DATES", message: `${column.name} still has ${upcoming} upcoming date${upcoming === 1 ? "" : "s"}. Move or remove them first.` });
+        }
+        calendarColumnsByHouseholdId.set(household.id, columns.filter((candidate) => candidate.id !== id));
+        return new Response(null, { status: 204 });
+      }
+      if (kind === "entries" && (method === "POST" || method === "PUT")) {
+        const existing = entries.find((entry) => entry.id === id);
+        const entry = {
+          id: existing?.id ?? crypto.randomUUID(),
+          title: String(body.title).trim(),
+          day: body.day,
+          time: body.time ?? null,
+          columnId: body.columnId ?? null,
+          createdAt: existing?.createdAt ?? new Date().toISOString(),
+        };
+        calendarEntriesByHouseholdId.set(household.id, [...entries.filter((candidate) => candidate.id !== entry.id), entry]);
+        return json(method === "POST" ? 201 : 200, { entry });
+      }
+      if (kind === "entries" && method === "DELETE") {
+        calendarEntriesByHouseholdId.set(household.id, entries.filter((entry) => entry.id !== id));
+        return new Response(null, { status: 204 });
+      }
     }
 
     if (segments[1] === "shopping-list" || segments[1] === "shopping-trip") {

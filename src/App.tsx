@@ -10,6 +10,8 @@ import { LoginScreen } from "./accounts/LoginScreen";
 import { InstallHint } from "./install/InstallHint";
 import { ChoresView } from "./chores/ChoresView";
 import { ShoppingNow } from "./home/ShoppingNow";
+import { CalendarScreen } from "./calendar/CalendarScreen";
+import { ComingUp } from "./home/ComingUp";
 import { TodayOverview } from "./home/TodayOverview";
 import { TonightDinner } from "./home/TonightDinner";
 import { MealsView } from "./meals/MealsView";
@@ -52,10 +54,12 @@ export function App() {
     setEntryScreen("log-in");
   }
 
-  // Settings opens over Home; any tab change leaves it.
+  // Settings and the calendar open over Home; any tab change leaves them.
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
+  const [isCalendarOpen, setIsCalendarOpen] = useState(false);
   const openTab = (tab: Tab) => {
     setIsSettingsOpen(false);
+    setIsCalendarOpen(false);
     setCurrentTab(tab);
   };
 
@@ -120,7 +124,9 @@ export function App() {
         <SettingsScreen household={state.household} theme={theme} onBack={() => setIsSettingsOpen(false)} onLogOut={logOutToWelcome} />
       )}
 
-      {state.status === "ready" && currentTab === Tab.Home && !isSettingsOpen && (
+      {state.status === "ready" && currentTab === Tab.Home && isCalendarOpen && <CalendarScreen onBack={() => setIsCalendarOpen(false)} />}
+
+      {state.status === "ready" && currentTab === Tab.Home && !isSettingsOpen && !isCalendarOpen && (
         <HouseholdView
           household={state.household}
           onAddMember={addMember}
@@ -131,6 +137,7 @@ export function App() {
             <>
               <ShoppingNow household={state.household} onOpenMeals={() => openTab(Tab.Meals)} />
               <TodayOverview household={state.household} onOpenChores={() => openTab(Tab.Chores)} />
+              <ComingUp onOpenCalendar={() => setIsCalendarOpen(true)} />
               <TonightDinner household={state.household} onOpenMeals={() => openTab(Tab.Meals)} />
               <MoneySummary household={state.household} onOpenMoney={() => openTab(Tab.Money)} />
             </>

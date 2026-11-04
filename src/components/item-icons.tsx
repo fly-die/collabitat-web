@@ -1,6 +1,7 @@
 import type { ReactNode } from "react";
 
 export type IconName =
+  | "calendar"
   | "trash"
   | "bath"
   | "broom"
@@ -19,7 +20,7 @@ export type IconName =
 
 // German and English word starts, lower case. The longest match wins, so "toilet paper" is
 // shopping rather than the bathroom, and "Badezimmer putzen" is the bathroom rather than cleaning.
-const KEYWORDS: Record<Exclude<IconName, "chore" | "receipt" | "payment">, string[]> = {
+const KEYWORDS: Record<Exclude<IconName, "chore" | "receipt" | "payment" | "calendar">, string[]> = {
   trash: ["trash", "garbage", "rubbish", "bin", "recycl", "müll", "muell", "abfall", "kehricht", "entsorg", "altglas", "altpapier", "karton", "compost", "kompost"],
   bath: ["bathroom", "badezimmer", "bath", "shower", "toilet", "wc", "loo", "sink", "bad", "dusche", "klo", "toilette", "lavabo"],
   broom: ["clean", "hoover", "vacuum", "sweep", "mop", "dust", "floor", "hallway", "putz", "saug", "staubsaug", "wisch", "boden", "fegen", "reinig", "flur", "gang"],
@@ -141,6 +142,12 @@ const PATHS: Record<IconName, ReactNode> = {
     </>
   ),
   payment: <path d="M5 9h13l-3-3M19 15H6l3 3" />,
+  calendar: (
+    <>
+      <rect x="4" y="5.5" width="16" height="14.5" rx="2" />
+      <path d="M4 10h16M8.5 3.5v4M15.5 3.5v4" />
+    </>
+  ),
 };
 
 export function ItemIcon({ name }: { name: IconName }) {

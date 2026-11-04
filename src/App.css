@@ -1532,3 +1532,75 @@ select.text-input {
     transition: none;
   }
 }
+
+/* Calendar: a row for each day with dates, a column for everyone and for each person or group. */
+.calendar__scroll {
+  margin-top: var(--space-4);
+  overflow-x: auto;
+  border: 1px solid var(--color-line);
+  border-radius: var(--radius-panel);
+  background: var(--color-surface);
+}
+
+.calendar__grid {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: var(--font-size-small);
+}
+
+.calendar__grid th,
+.calendar__grid td {
+  min-width: 7.5rem;
+  padding: var(--space-2);
+  border-bottom: 1px solid var(--color-divider);
+  text-align: left;
+  vertical-align: top;
+}
+
+.calendar__grid thead th {
+  color: var(--color-ink-muted);
+  font-weight: 700;
+}
+
+/* The day stays in view while the columns scroll sideways. */
+.calendar__grid th[scope="row"] {
+  position: sticky;
+  left: 0;
+  min-width: 6rem;
+  background: var(--color-surface);
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+.calendar__grid tbody tr:last-child > * {
+  border-bottom: 0;
+}
+
+.calendar__today th[scope="row"] {
+  color: var(--color-accent);
+}
+
+.calendar__entry {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  min-height: var(--touch-target);
+  margin-bottom: var(--space-1);
+  padding: var(--space-1) var(--space-2);
+  border: 0;
+  border-radius: var(--radius);
+  background: var(--color-accent-tint);
+  color: var(--color-ink);
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.calendar__time {
+  color: var(--color-ink-muted);
+  font-variant-numeric: tabular-nums;
+}
+
+.calendar__columns {
+  margin-top: var(--space-6);
+}
