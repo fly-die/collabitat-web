@@ -135,6 +135,68 @@ describe("meals", () => {
     expect(await screen.findByRole("alert")).toHaveTextContent("Write the item in 1 to 100 characters.");
   });
 
+  it("shops the list, shows it on Home, and checks out into an expense with undo", async () => {
+    await openMeals();
+    for (const item of ["2 l milk", "Zopf"]) {
+      type("Add to the list", item);
+      fireEvent.click(screen.getByRole("button", { name: "Add" }));
+      await screen.findByRole("checkbox", { name: item });
+    }
+
+    fireEvent.click(screen.getByRole("button", { name: "Start shopping" }));
+    expect(await screen.findByText("You're shopping. 0 of 2 in the basket.")).toBeInTheDocument();
+    fireEvent.click(screen.getByRole("checkbox", { name: "2 l milk" }));
+    expect(await screen.findByText("You're shopping. 1 of 2 in the basket.")).toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole("button", { name: "Home" }));
+    const shoppingNow = await screen.findByRole("region", { name: "Shopping now" });
+    expect(shoppingNow).toHaveTextContent("You're shopping1 of 2 in the basket");
+    expect(shoppingNow).toHaveTextContent("Still to get: Zopf.");
+
+    fireEvent.click(screen.getByRole("button", { name: "Meals" }));
+    fireEvent.click(await screen.findByRole("button", { name: "Check out" }));
+    expect(screen.getByLabelText("What was it for?")).toHaveValue("Groceries");
+    type("Amount", "42.70");
+    fireEvent.click(screen.getByRole("button", { name: "Add to Money" }));
+
+    expect(await screen.findByRole("status")).toHaveTextContent("Groceries for 42.70 added to Money.");
+    expect(await screen.findByRole("button", { name: "Start shopping" })).toBeInTheDocument();
+    expect(screen.queryByRole("checkbox", { name: "2 l milk" })).not.toBeInTheDocument();
+    expect(screen.getByRole("checkbox", { name: "Zopf" })).not.toBeChecked();
+
+    fireEvent.click(screen.getByRole("button", { name: "Undo" }));
+    expect(await screen.findByText("You're shopping. 1 of 2 in the basket.")).toBeInTheDocument();
+    expect(screen.getByRole("checkbox", { name: "2 l milk" })).toBeChecked();
+    fireEvent.click(screen.getByRole("button", { name: "Money" }));
+    expect(await screen.findByText(/^Nothing here yet\./)).toBeInTheDocument();
+  });
+
+  it("shows a flatmate's trip without the checkout, so I can still add to their list", async () => {
+    const server = createFakeHouseholdsServer();
+    vi.stubGlobal("fetch", vi.fn(server.handle));
+    await openMeals();
+    type("Add to the list", "Zopf");
+    fireEvent.click(screen.getByRole("button", { name: "Add" }));
+    fireEvent.click(await screen.findByRole("button", { name: "Start shopping" }));
+    await screen.findByRole("button", { name: "Check out" });
+    const lea = [...server.households.values()][0].members.find((member) => member.name === "Lea");
+    // Lea started the trip instead.
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(async (input: RequestInfo | URL, init?: RequestInit) => {
+        const response = await server.handle(input, init);
+        const text = await response.clone().text();
+        return new Response(text.replace(/"shopperMemberId":"[^"]+"/, `"shopperMemberId":"${lea?.id}"`), { status: response.status });
+      }),
+    );
+
+    fireEvent.click(screen.getByRole("button", { name: "Home" }));
+    expect(await screen.findByRole("region", { name: "Shopping now" })).toHaveTextContent("Lea is shopping0 of 1 in the basket");
+    fireEvent.click(screen.getByRole("button", { name: "Meals" }));
+    expect(await screen.findByText("Lea is shopping. 0 of 1 in the basket. What you add shows up for them right away.")).toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "Check out" })).not.toBeInTheDocument();
+  });
+
   it("clears a day with undo, and says what's missing before saving", async () => {
     await openMeals();
     fireEvent.click(screen.getByRole("button", { name: /^Today/ }));
