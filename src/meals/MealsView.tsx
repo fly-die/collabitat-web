@@ -44,6 +44,7 @@ export function MealsView({ household }: MealsViewProps) {
   const [screen, setScreen] = useState<MealsScreen>({ name: "week" });
   const { undoable, offerUndo, takeUndo } = useUndoable();
   const [error, setError] = useState<string>();
+  const [isCheckingOut, setIsCheckingOut] = useState(false);
   const backToWeek = () => setScreen({ name: "week" });
 
   async function run(action: () => Promise<unknown>) {
@@ -145,7 +146,7 @@ export function MealsView({ household }: MealsViewProps) {
     );
   }
 
-  const isBehindSheet = sheet !== undefined;
+  const isBehindSheet = sheet !== undefined || isCheckingOut;
 
   return (
     <>
@@ -186,7 +187,7 @@ export function MealsView({ household }: MealsViewProps) {
           })}
         </ul>
 
-        <ShoppingList monday={monday} onUndoable={offerUndo} />
+        <ShoppingList household={household} monday={monday} onUndoable={offerUndo} onSheetChange={setIsCheckingOut} />
 
         <section className="chores__group" aria-labelledby="recipes-heading">
           <h2 id="recipes-heading" className="section-title">

@@ -11,6 +11,10 @@ interface ExpenseScreenProps {
   onSave: (expense: NewExpense) => Promise<void>;
   onDelete?: () => Promise<void>;
   onBack: () => void;
+  // For a new expense with its purpose already known, e.g. checking out at the shop.
+  title?: string;
+  defaultDescription?: string;
+  submitLabel?: string;
 }
 
 interface FieldErrors {
@@ -20,10 +24,10 @@ interface FieldErrors {
   form?: string;
 }
 
-export function ExpenseScreen({ household, expense, onSave, onDelete, onBack }: ExpenseScreenProps) {
+export function ExpenseScreen({ household, expense, onSave, onDelete, onBack, title, defaultDescription, submitLabel }: ExpenseScreenProps) {
   const fieldId = useId();
   const me = household.currentMemberId;
-  const [description, setDescription] = useState(expense?.description ?? "");
+  const [description, setDescription] = useState(expense?.description ?? defaultDescription ?? "");
   const [amount, setAmount] = useState(() => (expense ? formatAmount(expense.amountCents) : ""));
   const [paidByMemberId, setPaidByMemberId] = useState(expense?.paidByMemberId ?? me);
   const [splitBetween, setSplitBetween] = useState(
@@ -109,7 +113,7 @@ export function ExpenseScreen({ household, expense, onSave, onDelete, onBack }: 
       <button className="back-link" type="button" onClick={onBack}>
         Cancel
       </button>
-      <h1 className="page-title">{expense ? "Edit expense" : "Add an expense"}</h1>
+      <h1 className="page-title">{title ?? (expense ? "Edit expense" : "Add an expense")}</h1>
 
       <form className="stacked-form" onSubmit={handleSubmit} noValidate>
         <label className="field-label" htmlFor={`${fieldId}-description`}>
@@ -121,7 +125,7 @@ export function ExpenseScreen({ household, expense, onSave, onDelete, onBack }: 
           value={description}
           placeholder="Groceries"
           autoComplete="off"
-          autoFocus={!expense}
+          autoFocus={!expense && !defaultDescription}
           {...invalidProps("description")}
           onChange={(event) => {
             setDescription(event.target.value);
@@ -140,6 +144,7 @@ export function ExpenseScreen({ household, expense, onSave, onDelete, onBack }: 
           placeholder="0.00"
           inputMode="decimal"
           autoComplete="off"
+          autoFocus={defaultDescription !== undefined}
           {...invalidProps("amount")}
           onChange={(event) => {
             setAmount(event.target.value);
@@ -195,7 +200,7 @@ export function ExpenseScreen({ household, expense, onSave, onDelete, onBack }: 
         />
 
         <button className="button button--block button--submit" type="submit" disabled={isSubmitting}>
-          {expense ? "Save changes" : "Add expense"}
+          {submitLabel ?? (expense ? "Save changes" : "Add expense")}
         </button>
         {errorText("form")}
       </form>
