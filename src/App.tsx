@@ -12,6 +12,7 @@ import { ChoresView } from "./chores/ChoresView";
 import { ShoppingNow } from "./home/ShoppingNow";
 import { CalendarScreen } from "./calendar/CalendarScreen";
 import { ComingUp } from "./home/ComingUp";
+import { HouseholdNotes } from "./home/HouseholdNotes";
 import { TodayOverview } from "./home/TodayOverview";
 import { TonightDinner } from "./home/TonightDinner";
 import { MealsView } from "./meals/MealsView";
@@ -140,6 +141,7 @@ export function App() {
               <ComingUp onOpenCalendar={() => setIsCalendarOpen(true)} />
               <TonightDinner household={state.household} onOpenMeals={() => openTab(Tab.Meals)} />
               <MoneySummary household={state.household} onOpenMoney={() => openTab(Tab.Money)} />
+              <HouseholdNotes household={state.household} />
             </>
           }
           footer={<InstallHint />}

@@ -1604,3 +1604,8 @@ select.text-input {
 .calendar__columns {
   margin-top: var(--space-6);
 }
+
+.notes__clear {
+  margin-top: var(--space-2);
+  padding-left: 0;
+}

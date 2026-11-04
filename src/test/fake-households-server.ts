@@ -22,6 +22,7 @@ export function createFakeHouseholdsServer({ pushPublicKey }: { pushPublicKey?: 
   const tripsByHouseholdId = new Map<string, { shopperMemberId: string; from: string; startedAt: string }>();
   // Ticked items as "<week>|<item key>".
   const checksByHouseholdId = new Map<string, Set<string>>();
+  const notesByHouseholdId = new Map<string, { id: string; text: string; authorMemberId: string | null; doneAt: string | null; createdAt: string }[]>();
   const calendarColumnsByHouseholdId = new Map<string, { id: string; name: string; createdAt: string }[]>();
   const calendarEntriesByHouseholdId = new Map<
     string,
@@ -316,6 +317,41 @@ export function createFakeHouseholdsServer({ pushPublicKey }: { pushPublicKey?: 
       }
       addAccount(body, currentMemberId);
       return json(201, view());
+    }
+
+    if (segments[1] === "notes") {
+      const notes = notesByHouseholdId.get(household.id) ?? [];
+      const sorted = (list: typeof notes) => [
+        ...list.filter((note) => !note.doneAt).reverse(),
+        ...list.filter((note) => note.doneAt).sort((first, second) => String(second.doneAt).localeCompare(String(first.doneAt))),
+      ];
+      const [, , id] = segments;
+      if (method === "GET") {
+        return json(200, { notes: sorted(notes) });
+      }
+      if (method === "POST") {
+        const text = String(body.text ?? "").trim();
+        if (!text) {
+          return json(400, { error: "INVALID_TEXT", message: "Write a note of up to 280 characters." });
+        }
+        const now = new Date().toISOString();
+        const note = { id: crypto.randomUUID(), text, authorMemberId: currentMemberId, doneAt: body.done ? now : null, createdAt: now };
+        notesByHouseholdId.set(household.id, [...notes, note]);
+        return json(201, { note });
+      }
+      if (method === "PUT") {
+        const changed = notes.map((note) => (note.id === id ? { ...note, doneAt: body.done ? new Date().toISOString() : null } : note));
+        notesByHouseholdId.set(household.id, changed);
+        return json(200, { note: changed.find((note) => note.id === id) });
+      }
+      if (method === "DELETE" && id === "done") {
+        notesByHouseholdId.set(household.id, notes.filter((note) => !note.doneAt));
+        return json(200, { removed: sorted(notes.filter((note) => note.doneAt)) });
+      }
+      if (method === "DELETE") {
+        notesByHouseholdId.set(household.id, notes.filter((note) => note.id !== id));
+        return new Response(null, { status: 204 });
+      }
     }
 
     if (segments[1] === "calendar") {
