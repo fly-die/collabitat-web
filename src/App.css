@@ -927,7 +927,7 @@ body.has-sheet {
   color: var(--color-ink-muted);
 }
 
-.meals .chores__group .button {
+.meals .chores__group > .button--block {
   margin-bottom: var(--space-4);
 }
 
@@ -1516,6 +1516,18 @@ select.text-input {
 
   .chores {
     max-width: 44rem;
+  }
+
+  /* Every tab starts at the same left edge next to the rail, whatever its width;
+     dialogs (outside .app) stay centered. */
+  .app .screen {
+    margin: 0;
+    padding-right: 4rem;
+    padding-left: 4rem;
+  }
+
+  .app .screen:not(.household, .money, .chores) {
+    max-width: calc(var(--content-max-width) + 8rem);
   }
 }
 
