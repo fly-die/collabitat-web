@@ -68,7 +68,12 @@ export function HouseholdView({
       <div className="household__main">
         <div className="household__top">
           <p className="eyebrow">{TODAY_FORMAT.format(new Date())}</p>
-          <button className="link-button household__settings" type="button" onClick={onOpenSettings}>
+          <button className="button button--outline settings-button" type="button" onClick={onOpenSettings}>
+            <svg className="settings-button__icon" viewBox="0 0 24 24" aria-hidden="true">
+              <path d="M4 7h9M17 7h3M4 17h3M11 17h9" />
+              <circle cx="15" cy="7" r="2" />
+              <circle cx="9" cy="17" r="2" />
+            </svg>
             Settings
           </button>
         </div>

@@ -97,6 +97,7 @@ export function useHousehold() {
 
   const addMember = async (name: string) => showHousehold(await householdsApi.addMember(name));
 
+  const renameMe = async (name: string) => showHousehold(await householdsApi.renameMe(name));
   const removeMember = async (memberId: string) =>
     showHousehold(await householdsApi.removeMember(memberId));
 
@@ -112,5 +113,6 @@ export function useHousehold() {
     addAccount,
     addMember,
     removeMember,
+    renameMe,
   };
 }

@@ -77,6 +77,7 @@ export const householdsApi = {
   get: () => request<Household>("/household"),
   addMember: (name: string) =>
     request<Household>("/household/members", { method: "POST", body: JSON.stringify({ name }) }),
+  renameMe: (name: string) => request<Household>("/household/me", { method: "PUT", body: JSON.stringify({ name }) }),
   removeMember: (memberId: string) =>
     request<Household>(`/household/members/${safeMemberId(memberId)}`, { method: "DELETE" }),
   getInvite: async (inviteCode: string) => request<Invite>(invitePath(inviteCode)),

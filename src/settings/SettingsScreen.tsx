@@ -1,3 +1,5 @@
+import { useId, useState, type FormEvent } from "react";
+import type { ApiError } from "../api/client";
 import type { Household } from "../api/households-api";
 import { useNotifications, type NotificationStatus } from "../notifications/useNotifications";
 import type { Theme, ThemeChoice } from "./useTheme";
@@ -11,6 +13,7 @@ const THEME_OPTIONS: { choice: ThemeChoice; label: string }[] = [
 interface SettingsScreenProps {
   household: Household;
   theme: Theme;
+  onRename: (name: string) => Promise<unknown>;
   onBack: () => void;
   onLogOut: () => void;
 }
@@ -26,9 +29,26 @@ const EXPLANATIONS: Partial<Record<NotificationStatus, string>> = {
   blocked: "Notifications are blocked for Collabitat. Allow them in your browser's site settings, then come back here.",
 };
 
-export function SettingsScreen({ household, theme, onBack, onLogOut }: SettingsScreenProps) {
+export function SettingsScreen({ household, theme, onRename, onBack, onLogOut }: SettingsScreenProps) {
   const { status, isBusy, error, turnOn, turnOff, checkAgain } = useNotifications();
   const me = household.members.find((member) => member.id === household.currentMemberId);
+  const fieldId = useId();
+  const [name, setName] = useState(me?.name ?? "");
+  const [nameMessage, setNameMessage] = useState<{ text: string; isError: boolean }>();
+
+  async function saveName(event: FormEvent) {
+    event.preventDefault();
+    if (!name.trim()) {
+      setNameMessage({ text: "Type the name your flatmates know you by.", isError: true });
+      return;
+    }
+    try {
+      await onRename(name);
+      setNameMessage({ text: "Saved.", isError: false });
+    } catch (renameError) {
+      setNameMessage({ text: (renameError as ApiError).message, isError: true });
+    }
+  }
   const isOn = status === "on";
   const explanation = EXPLANATIONS[status];
 
@@ -41,6 +61,35 @@ export function SettingsScreen({ household, theme, onBack, onLogOut }: SettingsS
       <p className="settings__who">
         {me?.name} in {household.name}
       </p>
+
+      <section aria-labelledby="you-heading">
+        <h2 id="you-heading" className="section-title">
+          You
+        </h2>
+        <form className="shopping__add" onSubmit={(event) => void saveName(event)}>
+          <label className="visually-hidden" htmlFor={`${fieldId}-name`}>
+            Your name
+          </label>
+          <input
+            id={`${fieldId}-name`}
+            className="text-input"
+            autoComplete="name"
+            value={name}
+            onChange={(event) => {
+              setName(event.target.value);
+              setNameMessage(undefined);
+            }}
+          />
+          <button className="button" type="submit">
+            Save name
+          </button>
+        </form>
+        {nameMessage && (
+          <p className={nameMessage.isError ? "form-error" : "field-hint"} role={nameMessage.isError ? "alert" : "status"}>
+            {nameMessage.text}
+          </p>
+        )}
+      </section>
 
       <section aria-labelledby="appearance-heading">
         <h2 id="appearance-heading" className="section-title">
@@ -109,9 +158,15 @@ export function SettingsScreen({ household, theme, onBack, onLogOut }: SettingsS
 
       {/* Without an account, logging out would lock this person out of their household. */}
       {household.currentMemberHasAccount && (
-        <button className="button button--quiet settings__log-out" type="button" onClick={onLogOut}>
-          Log out
-        </button>
+        <section aria-labelledby="account-heading">
+          <h2 id="account-heading" className="section-title">
+            Account
+          </h2>
+          <p className="field-hint">Logging out stops notifications on this device. Log in again with your email and password.</p>
+          <button className="button button--outline settings__log-out" type="button" onClick={onLogOut}>
+            Log out
+          </button>
+        </section>
       )}
     </div>
   );

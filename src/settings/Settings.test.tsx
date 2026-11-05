@@ -45,6 +45,24 @@ describe("settings", () => {
     expect(await screen.findByRole("heading", { level: 1, name: "Settings" })).toBeInTheDocument();
   }
 
+  it("changes my name, says when a flatmate has it, and logs out from its own section", async () => {
+    await openSettings();
+    fireEvent.click(screen.getByRole("button", { name: "Back" }));
+    fireEvent.click(await screen.findByRole("button", { name: "+ Add a flatmate" }));
+    type("New flatmate's name", "Lea");
+    fireEvent.click(screen.getByRole("button", { name: "Add" }));
+    await screen.findByRole("button", { name: "Remove Lea" });
+    fireEvent.click(screen.getByRole("button", { name: "Settings" }));
+
+    type("Your name", "lea");
+    fireEvent.click(screen.getByRole("button", { name: "Save name" }));
+    expect(await screen.findByRole("alert")).toHaveTextContent("Lea is already a member.");
+    type("Your name", "Mia Rossi");
+    fireEvent.click(screen.getByRole("button", { name: "Save name" }));
+    expect(await screen.findByText("Mia Rossi in Langstrasse 12")).toBeInTheDocument();
+    expect(screen.getByRole("region", { name: "Account" })).toContainElement(screen.getByRole("button", { name: "Log out" }));
+  });
+
   it("turns notifications on after asking, and off again, keeping the server in step", async () => {
     const push = installFakePush();
     await openSettings();

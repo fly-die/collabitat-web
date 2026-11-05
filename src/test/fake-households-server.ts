@@ -552,6 +552,14 @@ export function createFakeHouseholdsServer({ pushPublicKey }: { pushPublicKey?: 
       return json(200, moneyOf(household));
     }
 
+    if (method === "PUT" && pathname === "/household/me") {
+      const taken = household.members.find((member) => member.id !== currentMemberId && member.name.toLowerCase() === name.toLowerCase());
+      if (taken) {
+        return json(409, { error: "DUPLICATE_MEMBER", message: `${taken.name} is already a member.` });
+      }
+      household.members = household.members.map((member) => (member.id === currentMemberId ? { ...member, name } : member));
+      return json(200, view());
+    }
     if (method === "POST") {
       if (household.members.some((member) => member.name.toLowerCase() === name.toLowerCase())) {
         return json(409, { error: "DUPLICATE_MEMBER", message: `${name} is already a member.` });

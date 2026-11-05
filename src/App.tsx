@@ -38,6 +38,7 @@ export function App() {
     logOut,
     addAccount,
     addMember,
+    renameMe,
     removeMember,
   } = useHousehold();
   useLiveConnection(state.status === "ready");
@@ -122,7 +123,13 @@ export function App() {
       )}
 
       {state.status === "ready" && currentTab === Tab.Home && isSettingsOpen && (
-        <SettingsScreen household={state.household} theme={theme} onBack={() => setIsSettingsOpen(false)} onLogOut={logOutToWelcome} />
+        <SettingsScreen
+          household={state.household}
+          theme={theme}
+          onRename={renameMe}
+          onBack={() => setIsSettingsOpen(false)}
+          onLogOut={logOutToWelcome}
+        />
       )}
 
       {state.status === "ready" && currentTab === Tab.Home && isCalendarOpen && <CalendarScreen onBack={() => setIsCalendarOpen(false)} />}

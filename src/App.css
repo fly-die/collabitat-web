@@ -1049,13 +1049,27 @@ body.has-sheet {
 
 .household__top {
   display: flex;
-  align-items: baseline;
+  align-items: center;
   justify-content: space-between;
   gap: var(--space-3);
 }
 
-.household__settings {
-  min-height: var(--touch-target);
+/* Easy to spot and tap: an outlined button with an icon, not a text link. */
+.settings-button {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  padding: 0 var(--space-3);
+  font-size: var(--font-size-small);
+}
+
+.settings-button__icon {
+  width: 1.25rem;
+  height: 1.25rem;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.8;
+  stroke-linecap: round;
 }
 
 /* Three choices side by side; the picked one sits on the surface like a raised key. */
@@ -1126,8 +1140,7 @@ body.has-sheet {
 }
 
 .settings__log-out {
-  align-self: flex-start;
-  margin-top: var(--space-6);
+  margin-top: var(--space-3);
 }
 
 .setting {
