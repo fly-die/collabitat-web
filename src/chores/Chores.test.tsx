@@ -1,7 +1,10 @@
 import { fireEvent, render, screen, within } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { App } from "../App";
+import { addDays } from "../meals/week";
+import { todayIsoDate } from "../money/money-format";
 import { createFakeHouseholdsServer } from "../test/fake-households-server";
+import { describeDue } from "./chore-format";
 
 function type(label: string, value: string) {
   fireEvent.change(screen.getByLabelText(label), { target: { value } });
@@ -150,6 +153,40 @@ describe("chores", () => {
 
     expect(screen.getByText("Say what needs doing.")).toBeInTheDocument();
     expect(screen.getByText("Pick a number from 1 to 365.")).toBeInTheDocument();
+  });
+
+  it("starts a new chore with whoever has the fewest turns, not always me", async () => {
+    await openChores("Lea", "Noah");
+    await addChore("Take out the trash");
+    await addChore("Clean the bathroom");
+    await addChore("Water the plants");
+
+    expect(rows()).toEqual([
+      "Take out the trashYour turnDue todayDone",
+      "Clean the bathroomLea's turnDue todayDone",
+      "Water the plantsNoah's turnDue todayDone",
+    ]);
+  });
+
+  it("changes a chore and keeps whose turn it is, with undo", async () => {
+    await openChores("Lea");
+    await addChore("Take out the trash");
+    fireEvent.click(screen.getByRole("button", { name: "Mark Take out the trash done" }));
+    await screen.findByRole("status");
+
+    fireEvent.click(screen.getByRole("button", { name: /^Take out the trash/ }));
+    fireEvent.click(screen.getByRole("button", { name: "Edit chore" }));
+    expect(screen.getByLabelText("What needs doing?")).toHaveValue("Take out the trash");
+    expect(screen.queryByLabelText("First time")).not.toBeInTheDocument();
+    type("What needs doing?", "Take out the recycling");
+    type("How many", "2");
+    fireEvent.click(screen.getByRole("button", { name: "Save chore" }));
+
+    expect(await screen.findByRole("status")).toHaveTextContent("Take out the recycling saved.");
+    expect(rows()).toEqual([`Take out the recyclingLea's turn${describeDue(addDays(todayIsoDate(), 14))}Done`]);
+    fireEvent.click(screen.getByRole("button", { name: "Undo" }));
+    expect(await screen.findByRole("button", { name: "Mark Take out the trash done" })).toBeInTheDocument();
+    expect(rows()).toEqual(["Take out the trashLea's turnIn 7 daysDone"]);
   });
 
   it("opens a chore to see it and delete it, with undo", async () => {

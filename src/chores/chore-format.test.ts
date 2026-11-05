@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { describeDue, describeInterval } from "./chore-format";
+import { describeDue, describeInterval, startWithFewestTurns } from "./chore-format";
 
 const SUNDAY_EVENING = new Date(2026, 10, 1, 21, 30);
 
@@ -22,5 +22,19 @@ describe("chore wording", () => {
     [3, "month", "Every 3 months"],
   ] as const)("says every %i %s as %j", (every, unit, expected) => {
     expect(describeInterval(every, unit)).toBe(expected);
+  });
+});
+
+describe("first turns", () => {
+  const turns = (...memberIds: (string | null)[]) => memberIds.map((turnMemberId) => ({ turnMemberId }));
+
+  it.each([
+    [["mia", "lea", "noah"], turns(), ["mia", "lea", "noah"]],
+    [["mia", "lea", "noah"], turns("mia"), ["lea", "noah", "mia"]],
+    [["mia", "lea", "noah"], turns("mia", "lea", "mia", null), ["noah", "mia", "lea"]],
+    [["lea"], turns("lea", "lea"), ["lea"]],
+    [[], turns("mia"), []],
+  ])("turns %j with current turns %j start as %j", (rotation, tasks, expected) => {
+    expect(startWithFewestTurns(rotation, tasks)).toEqual(expected);
   });
 });

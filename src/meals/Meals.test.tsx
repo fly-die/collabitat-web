@@ -214,6 +214,30 @@ describe("meals", () => {
     expect(await screen.findByRole("button", { name: /^TodayLeftovers/ })).toBeInTheDocument();
   });
 
+  it("changes a recipe, renames tonight's dinner with it, and can undo that", async () => {
+    await openMeals();
+    await addRecipe("Pasta", "500 g pasta");
+    fireEvent.click(screen.getByRole("button", { name: /^Today/ }));
+    fireEvent.click(within(screen.getByRole("dialog", { name: "Dinner today" })).getByRole("button", { name: "Pasta" }));
+    fireEvent.click(screen.getByRole("button", { name: "Save dinner" }));
+    await screen.findByRole("button", { name: /^TodayPasta/ });
+
+    fireEvent.click(screen.getByRole("button", { name: /^Pasta.*Serves/ }));
+    fireEvent.click(screen.getByRole("button", { name: "Edit recipe" }));
+    expect(screen.getByLabelText("Ingredients, one per line")).toHaveValue("500 g pasta");
+    type("Name", "Penne arrabbiata");
+    type("Servings", "2");
+    type("Ingredients, one per line", "250 g penne\n1 chili");
+    fireEvent.click(screen.getByRole("button", { name: "Save recipe" }));
+
+    expect(await screen.findByRole("status")).toHaveTextContent("Penne arrabbiata saved.");
+    expect(screen.getByRole("button", { name: /^TodayPenne arrabbiata/ })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: /^Penne arrabbiata.*Serves 2, 2 ingredients$/ })).toBeInTheDocument();
+    fireEvent.click(screen.getByRole("button", { name: "Undo" }));
+    expect(await screen.findByRole("button", { name: /^Pasta.*Serves 4, 1 ingredient$/ })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: /^TodayPasta/ })).toBeInTheDocument();
+  });
+
   it("deletes a recipe with undo, and shows next week", async () => {
     await openMeals();
     await addRecipe("Curry", "1 can coconut milk");
