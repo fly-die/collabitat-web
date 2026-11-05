@@ -38,7 +38,7 @@ export function startWithFewestTurns(rotation: string[], tasks: { turnMemberId: 
     return rotation;
   }
   const turnsOf = (memberId: string) => tasks.filter((task) => task.turnMemberId === memberId).length;
-  const first = rotation.reduce((fewest, memberId) => (turnsOf(memberId) < turnsOf(fewest) ? memberId : fewest));
+  const first = rotation.reduce((fewest, memberId) => (turnsOf(memberId) < turnsOf(fewest) ? memberId : fewest), rotation[0]);
   const start = rotation.indexOf(first);
   return [...rotation.slice(start), ...rotation.slice(0, start)];
 }
