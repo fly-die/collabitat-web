@@ -1,7 +1,7 @@
 import { useId, useState, type FormEvent, type ReactNode } from "react";
 import type { ApiError } from "../api/client";
 import type { Household } from "../api/households-api";
-import type { MealPlan, PlannedMeal, Recipe } from "../api/meals-api";
+import type { MealPlan, NewRecipe, PlannedMeal, Recipe } from "../api/meals-api";
 import { ItemIcon, iconFor } from "../components/item-icons";
 import { Sheet } from "../components/Sheet";
 import { UndoBar } from "../components/UndoBar";
@@ -14,7 +14,14 @@ import { useMeals } from "./useMeals";
 const DEFAULT_SERVINGS = "4";
 const WHOLE_NUMBER_PATTERN = /^\d{1,2}$/;
 
-type MealsScreen = { name: "week" } | { name: "plan"; date: string } | { name: "add-recipe" } | { name: "recipe"; recipe: Recipe };
+type MealsScreen =
+  | { name: "week" }
+  | { name: "plan"; date: string }
+  | { name: "add-recipe" }
+  | { name: "recipe"; recipe: Recipe }
+  | { name: "edit-recipe"; recipe: Recipe };
+
+const asNewRecipe = ({ title, servings, ingredients }: Recipe) => ({ title, servings, ingredientLines: ingredients.map(ingredientLine) });
 
 interface MealsViewProps {
   household: Household;
@@ -38,9 +45,10 @@ export function cookLabel(household: Household, cookMemberId: string | null) {
 }
 
 export function MealsView({ household }: MealsViewProps) {
-  const thisMonday = mondayOf(todayIsoDate());
+  const today = todayIsoDate();
+  const thisMonday = mondayOf(today);
   const [monday, setMonday] = useState(thisMonday);
-  const { state, retry, plan, clear, addRecipe, removeRecipe } = useMeals(monday);
+  const { state, retry, plan, clear, addRecipe, updateRecipe, removeRecipe } = useMeals(monday);
   const [screen, setScreen] = useState<MealsScreen>({ name: "week" });
   const { undoable, offerUndo, takeUndo } = useUndoable();
   const [error, setError] = useState<string>();
@@ -81,11 +89,12 @@ export function MealsView({ household }: MealsViewProps) {
 
   async function deleteRecipe(recipe: Recipe) {
     await removeRecipe(recipe.id);
-    const { title, servings, ingredients } = recipe;
-    offerUndo({
-      message: `${title} deleted.`,
-      undo: () => addRecipe({ title, servings, ingredientLines: ingredients.map(ingredientLine) }),
-    });
+    offerUndo({ message: `${recipe.title} deleted.`, undo: () => addRecipe(asNewRecipe(recipe)) });
+  }
+
+  async function changeRecipe(recipe: Recipe, changed: NewRecipe) {
+    await updateRecipe(recipe.id, changed);
+    offerUndo({ message: `${changed.title.trim()} saved.`, undo: () => updateRecipe(recipe.id, asNewRecipe(recipe)) });
   }
 
   let sheet: ReactNode;
@@ -107,7 +116,14 @@ export function MealsView({ household }: MealsViewProps) {
   } else if (screen.name === "add-recipe") {
     sheet = (
       <Sheet label="Add a recipe" onClose={backToWeek}>
-        <AddRecipeScreen onAdd={addRecipe} onBack={backToWeek} />
+        <RecipeFormScreen onSave={addRecipe} onBack={backToWeek} />
+      </Sheet>
+    );
+  } else if (screen.name === "edit-recipe") {
+    const { recipe } = screen;
+    sheet = (
+      <Sheet label="Edit recipe" onClose={backToWeek}>
+        <RecipeFormScreen recipe={recipe} onSave={(changed) => changeRecipe(recipe, changed)} onBack={backToWeek} />
       </Sheet>
     );
   } else if (screen.name === "recipe") {
@@ -129,6 +145,9 @@ export function MealsView({ household }: MealsViewProps) {
           ) : (
             <p className="chore-detail">No ingredients yet.</p>
           )}
+          <button className="button button--block" type="button" onClick={() => setScreen({ name: "edit-recipe", recipe })}>
+            Edit recipe
+          </button>
           <button
             className="button button--quiet expense-screen__delete"
             type="button"
@@ -173,7 +192,7 @@ export function MealsView({ household }: MealsViewProps) {
             const meal = mealOn(date);
             const cook = cookLabel(household, meal?.cookMemberId ?? null);
             return (
-              <li key={date} className="panel__row chore">
+              <li key={date} className={`panel__row chore${date < today ? " meals__past" : ""}`}>
                 <button className="chore__open" type="button" onClick={() => setScreen({ name: "plan", date })}>
                   <ItemIcon name={meal ? iconFor(meal.title, "food") : "food"} />
                   <span className="chore__text">
@@ -339,16 +358,18 @@ function PlanDinnerScreen({ household, date, meal, recipes, onSave, onClear, onB
   );
 }
 
-interface AddRecipeScreenProps {
-  onAdd: (recipe: { title: string; servings: number; ingredientLines: string[] }) => Promise<unknown>;
+interface RecipeFormScreenProps {
+  // Set when editing; the form starts with what it has.
+  recipe?: Recipe;
+  onSave: (recipe: NewRecipe) => Promise<unknown>;
   onBack: () => void;
 }
 
-function AddRecipeScreen({ onAdd, onBack }: AddRecipeScreenProps) {
+function RecipeFormScreen({ recipe, onSave, onBack }: RecipeFormScreenProps) {
   const fieldId = useId();
-  const [title, setTitle] = useState("");
-  const [servings, setServings] = useState(DEFAULT_SERVINGS);
-  const [ingredients, setIngredients] = useState("");
+  const [title, setTitle] = useState(recipe?.title ?? "");
+  const [servings, setServings] = useState(recipe ? String(recipe.servings) : DEFAULT_SERVINGS);
+  const [ingredients, setIngredients] = useState(recipe ? recipe.ingredients.map(ingredientLine).join("\n") : "");
   const [error, setError] = useState<string>();
   const [isBusy, setIsBusy] = useState(false);
 
@@ -365,7 +386,7 @@ function AddRecipeScreen({ onAdd, onBack }: AddRecipeScreenProps) {
     setIsBusy(true);
     setError(undefined);
     try {
-      await onAdd({ title, servings: Number(servings), ingredientLines: ingredients.split("\n") });
+      await onSave({ title, servings: Number(servings), ingredientLines: ingredients.split("\n") });
       onBack();
     } catch (addError) {
       setError((addError as ApiError).message);
@@ -378,7 +399,7 @@ function AddRecipeScreen({ onAdd, onBack }: AddRecipeScreenProps) {
       <button className="back-link" type="button" onClick={onBack}>
         Cancel
       </button>
-      <h1 className="page-title">Add a recipe</h1>
+      <h1 className="page-title">{recipe ? "Edit recipe" : "Add a recipe"}</h1>
       <form className="stacked-form" onSubmit={handleSubmit} noValidate>
         <label className="field-label" htmlFor={`${fieldId}-title`}>
           Name
@@ -389,7 +410,7 @@ function AddRecipeScreen({ onAdd, onBack }: AddRecipeScreenProps) {
           value={title}
           placeholder="Pasta al pomodoro"
           autoComplete="off"
-          autoFocus
+          autoFocus={!recipe}
           onChange={(event) => setTitle(event.target.value)}
         />
         <label className="field-label" htmlFor={`${fieldId}-servings`}>

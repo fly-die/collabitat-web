@@ -456,6 +456,21 @@ export function createFakeHouseholdsServer({ pushPublicKey }: { pushPublicKey?: 
         recipesByHouseholdId.set(household.id, [...recipes, { id: crypto.randomUUID(), title: body.title.trim(), servings: body.servings, ingredients }]);
         return json(201, weekOf(household, from));
       }
+      if (segments[1] === "recipes" && method === "PUT") {
+        const ingredients = body.ingredientLines
+          .map((line: string) => line.trim())
+          .filter(Boolean)
+          .map((name: string) => ({ quantity: null, unit: null, name }));
+        const title = body.title.trim();
+        recipesByHouseholdId.set(
+          household.id,
+          recipes.map((recipe) => (recipe.id === segments[2] ? { ...recipe, title, servings: body.servings, ingredients } : recipe)),
+        );
+        mealsByHouseholdId.set(
+          household.id,
+          (mealsByHouseholdId.get(household.id) ?? []).map((meal) => (meal.recipeId === segments[2] ? { ...meal, title } : meal)),
+        );
+      }
       if (segments[1] === "recipes" && method === "DELETE") {
         recipesByHouseholdId.set(household.id, recipes.filter((recipe) => recipe.id !== segments[2]));
       }

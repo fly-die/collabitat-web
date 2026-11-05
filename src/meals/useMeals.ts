@@ -45,6 +45,7 @@ export function useMeals(monday: string) {
     plan: (date: string, plan: MealPlan) => apply(mealsApi.plan(monday, date, plan)),
     clear: (date: string) => apply(mealsApi.clear(monday, date)),
     addRecipe: (recipe: NewRecipe) => apply(mealsApi.addRecipe(monday, recipe)),
+    updateRecipe: (recipeId: string, recipe: NewRecipe) => apply(mealsApi.updateRecipe(monday, recipeId, recipe)),
     removeRecipe: (recipeId: string) => apply(mealsApi.removeRecipe(monday, recipeId)),
   };
 }

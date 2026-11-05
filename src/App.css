@@ -1609,3 +1609,15 @@ select.text-input {
   margin-top: var(--space-2);
   padding-left: 0;
 }
+
+/* Days already gone step back, so the days ahead stand out. */
+.meals__past .meals__day,
+.meals__past .chore__title,
+.meals__past .meals__empty {
+  color: var(--color-ink-muted);
+  font-weight: 400;
+}
+
+.meals__past .item-icon {
+  opacity: 0.5;
+}

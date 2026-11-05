@@ -59,6 +59,11 @@ export const mealsApi = {
     request<MealWeek>(`/household/meals/${safeDate(date)}?${week(from)}`, { method: "DELETE" }),
   addRecipe: (from: string, recipe: NewRecipe) =>
     request<MealWeek>(`/household/recipes?${week(from)}`, { method: "POST", body: JSON.stringify(recipe) }),
+  updateRecipe: (from: string, recipeId: string, recipe: NewRecipe) =>
+    request<MealWeek>(
+      `/household/recipes/${safeId(recipeId, RECIPE_NOT_FOUND_CODE, "That recipe is already gone.")}?${week(from)}`,
+      { method: "PUT", body: JSON.stringify(recipe) },
+    ),
   removeRecipe: (from: string, recipeId: string) =>
     request<MealWeek>(
       `/household/recipes/${safeId(recipeId, RECIPE_NOT_FOUND_CODE, "That recipe is already gone.")}?${week(from)}`,
