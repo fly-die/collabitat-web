@@ -70,6 +70,33 @@ describe("meals", () => {
     expect(await screen.findByRole("list", { name: "Tonight's dinner" })).toHaveTextContent("PastaLea cooks");
   });
 
+  it("plans breakfast on the days it is switched on, and keeps Tonight to dinner", async () => {
+    await openMeals();
+    const todayName = new Intl.DateTimeFormat("en-GB", { weekday: "long" }).format(new Date());
+    const breakfastDays = () => within(screen.getByRole("group", { name: "Breakfast on" }));
+
+    fireEvent.click(breakfastDays().getByRole("button", { name: todayName }));
+    expect(await screen.findByRole("button", { name: /^Today, breakfastNothing planned/ })).toBeInTheDocument();
+    expect(breakfastDays().getByRole("button", { name: todayName })).toHaveAttribute("aria-pressed", "true");
+    expect(dinners()).toHaveLength(8);
+
+    fireEvent.click(screen.getByRole("button", { name: /^Today, breakfast/ }));
+    type("What's for breakfast?", "Zopf");
+    fireEvent.click(within(screen.getByRole("dialog", { name: "Breakfast today" })).getByRole("button", { name: "Save breakfast" }));
+    await screen.findByRole("button", { name: /^Today, breakfastZopf/ });
+    fireEvent.click(screen.getByRole("button", { name: /^Today, dinner/ }));
+    type("What's for dinner?", "Raclette");
+    fireEvent.click(screen.getByRole("button", { name: "Save dinner" }));
+    await screen.findByRole("button", { name: /^Today, dinnerRaclette/ });
+
+    fireEvent.click(screen.getByRole("button", { name: "Home" }));
+    expect(await screen.findByRole("list", { name: "Tonight's dinner" })).toHaveTextContent("Raclette");
+    expect(screen.queryByText("Zopf")).not.toBeInTheDocument();
+    fireEvent.click(screen.getByRole("button", { name: "Meals" }));
+    fireEvent.click(await within(await screen.findByRole("group", { name: "Breakfast on" })).findByRole("button", { name: todayName }));
+    await waitFor(() => expect(dinners()).toHaveLength(7));
+  });
+
   it("offers to plan tonight from Home, and says when I cook", async () => {
     await openMeals();
     fireEvent.click(screen.getByRole("button", { name: "Home" }));
