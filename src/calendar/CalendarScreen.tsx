@@ -21,7 +21,7 @@ interface CalendarScreenProps {
 export function CalendarScreen({ onBack }: CalendarScreenProps) {
   const today = todayIsoDate();
   const { state, reload, retry } = useCalendar(today);
-  const { undoable, offerUndo, takeUndo } = useUndoable();
+  const { undoable, offerUndo, takeUndo, dismissUndo } = useUndoable();
   const [editing, setEditing] = useState<Editing>();
   const [newColumnName, setNewColumnName] = useState("");
   const [error, setError] = useState<string>();
@@ -192,6 +192,8 @@ export function CalendarScreen({ onBack }: CalendarScreenProps) {
 
         {undoable && (
           <UndoBar
+            key={undoable.id}
+            onExpire={dismissUndo}
             message={undoable.message}
             onUndo={() => {
               const undo = takeUndo();

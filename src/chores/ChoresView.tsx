@@ -32,7 +32,7 @@ function myTurnHint(myDueCount: number, dueCount: number) {
 export function ChoresView({ household }: ChoresViewProps) {
   const { state, retry, addChore, updateChore, removeChore, completeChore } = useChores();
   const [screen, setScreen] = useState<ChoresScreen>({ name: "overview" });
-  const { undoable, offerUndo, takeUndo } = useUndoable();
+  const { undoable, offerUndo, takeUndo, dismissUndo } = useUndoable();
   const [error, setError] = useState<string>();
   const me = household.currentMemberId;
   const backToOverview = () => setScreen({ name: "overview" });
@@ -202,6 +202,8 @@ export function ChoresView({ household }: ChoresViewProps) {
 
       {undoable && (
         <UndoBar
+            key={undoable.id}
+            onExpire={dismissUndo}
           message={undoable.message}
           onUndo={() => {
             const undo = takeUndo();

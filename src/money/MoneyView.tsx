@@ -3,7 +3,8 @@ import type { ApiError } from "../api/client";
 import type { Expense, Money, NewExpense, NewSettlement, Settlement, Transfer } from "../api/expenses-api";
 import type { Household } from "../api/households-api";
 import { CountUpAmount } from "../components/CountUpAmount";
-import { UNDO_TIMEOUT_MS, UndoBar } from "../components/UndoBar";
+import { UndoBar } from "../components/UndoBar";
+import { useUndoable, type Undoable } from "../components/useUndoable";
 import { ItemIcon, iconFor } from "../components/item-icons";
 import { Sheet } from "../components/Sheet";
 import { ExpenseScreen } from "./ExpenseScreen";
@@ -22,10 +23,6 @@ type MoneyScreen =
   | { name: "expense"; expense: Expense }
   | { name: "settle-up"; transfer: Transfer };
 
-interface Undoable {
-  message: string;
-  undo: () => Promise<void>;
-}
 
 type NameOf = (memberId: string) => string;
 
@@ -46,7 +43,7 @@ function toNewSettlement({ fromMemberId, toMemberId, amountCents, settledOn }: S
 export function MoneyView({ household }: MoneyViewProps) {
   const { state, retry, addExpense, editExpense, removeExpense, settle, removeSettlement } = useMoney();
   const [screen, setScreen] = useState<MoneyScreen>({ name: "overview" });
-  const [undoable, setUndoable] = useState<Undoable>();
+  const { undoable, offerUndo: setUndoable, dismissUndo } = useUndoable();
   const [headlineStartCents, setHeadlineStartCents] = useState<number>();
   const me = household.currentMemberId;
   const nameOf: NameOf = (memberId) =>
@@ -60,14 +57,6 @@ export function MoneyView({ household }: MoneyViewProps) {
       document.scrollingElement.scrollTop = 0;
     }
   }, [isSettlingUp]);
-
-  useEffect(() => {
-    if (!undoable) {
-      return;
-    }
-    const timeout = setTimeout(() => setUndoable(undefined), UNDO_TIMEOUT_MS);
-    return () => clearTimeout(timeout);
-  }, [undoable]);
 
   if (state.status === "loading") {
     return <p className="screen hint">Adding things up…</p>;
@@ -173,6 +162,7 @@ export function MoneyView({ household }: MoneyViewProps) {
       onOpenExpense={(expense) => leaveOverview({ name: "expense", expense })}
       onDeleteSettlement={deleteSettlement}
       undoable={undoable}
+      onUndoExpire={dismissUndo}
       onUndo={async (action) => {
         setUndoable(undefined);
         await action.undo();
@@ -229,8 +219,9 @@ interface MoneyOverviewProps {
   onSettleUp: (transfer: Transfer) => void;
   onOpenExpense: (expense: Expense) => void;
   onDeleteSettlement: (settlement: Settlement) => Promise<void>;
-  undoable?: Undoable;
+  undoable?: Undoable & { id: number };
   onUndo: (action: Undoable) => Promise<void>;
+  onUndoExpire: () => void;
 }
 
 function MoneyOverview({
@@ -244,6 +235,7 @@ function MoneyOverview({
   onOpenExpense,
   onDeleteSettlement,
   undoable,
+  onUndoExpire,
   onUndo,
 }: MoneyOverviewProps) {
   const [error, setError] = useState<string>();
@@ -386,7 +378,9 @@ function MoneyOverview({
         )}
       </section>
 
-      {undoable && <UndoBar message={undoable.message} onUndo={() => run(() => onUndo(undoable))} />}
+      {undoable && (
+        <UndoBar key={undoable.id} message={undoable.message} onUndo={() => run(() => onUndo(undoable))} onExpire={onUndoExpire} />
+      )}
     </div>
   );
 }

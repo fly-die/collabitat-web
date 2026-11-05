@@ -20,7 +20,7 @@ interface TodayOverviewProps {
 // While chores load or the server is unreachable it stays out of the way; the Chores tab explains.
 export function TodayOverview({ household, onOpenChores }: TodayOverviewProps) {
   const { state, completeChore } = useChores();
-  const { undoable, offerUndo, takeUndo } = useUndoable();
+  const { undoable, offerUndo, takeUndo, dismissUndo } = useUndoable();
   const [error, setError] = useState<string>();
 
   if (state.status !== "ready") {
@@ -108,6 +108,8 @@ export function TodayOverview({ household, onOpenChores }: TodayOverviewProps) {
 
       {undoable && (
         <UndoBar
+            key={undoable.id}
+            onExpire={dismissUndo}
           message={undoable.message}
           onUndo={() => {
             const undo = takeUndo();

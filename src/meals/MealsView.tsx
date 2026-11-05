@@ -50,7 +50,7 @@ export function MealsView({ household }: MealsViewProps) {
   const [monday, setMonday] = useState(thisMonday);
   const { state, retry, plan, clear, addRecipe, updateRecipe, removeRecipe } = useMeals(monday);
   const [screen, setScreen] = useState<MealsScreen>({ name: "week" });
-  const { undoable, offerUndo, takeUndo } = useUndoable();
+  const { undoable, offerUndo, takeUndo, dismissUndo } = useUndoable();
   const [error, setError] = useState<string>();
   const [isCheckingOut, setIsCheckingOut] = useState(false);
   const backToWeek = () => setScreen({ name: "week" });
@@ -238,6 +238,8 @@ export function MealsView({ household }: MealsViewProps) {
 
         {undoable && (
           <UndoBar
+            key={undoable.id}
+            onExpire={dismissUndo}
             message={undoable.message}
             onUndo={() => {
               const undo = takeUndo();

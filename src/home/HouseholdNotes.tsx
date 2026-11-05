@@ -23,7 +23,7 @@ export function HouseholdNotes({ household }: HouseholdNotesProps) {
   const [text, setText] = useState("");
   const [error, setError] = useState<string>();
   const [loadAttempt, setLoadAttempt] = useState(0);
-  const { undoable, offerUndo, takeUndo } = useUndoable();
+  const { undoable, offerUndo, takeUndo, dismissUndo } = useUndoable();
   const reload = () => setLoadAttempt((attempt) => attempt + 1);
   useLiveTopic("notes", reload);
 
@@ -159,6 +159,8 @@ export function HouseholdNotes({ household }: HouseholdNotesProps) {
       )}
       {undoable && (
         <UndoBar
+            key={undoable.id}
+            onExpire={dismissUndo}
           message={undoable.message}
           onUndo={() => {
             const undo = takeUndo();

@@ -1,22 +1,21 @@
-import { useEffect, useState } from "react";
-import { UNDO_TIMEOUT_MS } from "./UndoBar";
+import { useState } from "react";
 
 export interface Undoable {
   message: string;
   undo: () => Promise<unknown>;
 }
 
-// One undo offer at a time; it disappears on its own after the undo bar's countdown.
-export function useUndoable() {
-  const [undoable, setUndoable] = useState<Undoable>();
+// Each offer gets its own id, so a new offer restarts the undo bar's countdown.
+let nextOfferId = 0;
 
-  useEffect(() => {
-    if (!undoable) {
-      return;
-    }
-    const timeout = setTimeout(() => setUndoable(undefined), UNDO_TIMEOUT_MS);
-    return () => clearTimeout(timeout);
-  }, [undoable]);
+// One undo offer at a time; the undo bar says when its countdown has run out.
+export function useUndoable() {
+  const [undoable, setUndoable] = useState<Undoable & { id: number }>();
+
+  const offerUndo = (offer: Undoable | undefined) => {
+    nextOfferId += 1;
+    setUndoable(offer && { ...offer, id: nextOfferId });
+  };
 
   // Hands back the undo action and clears the offer, so it can only run once.
   const takeUndo = () => {
@@ -24,5 +23,5 @@ export function useUndoable() {
     return undoable?.undo;
   };
 
-  return { undoable, offerUndo: setUndoable, takeUndo };
+  return { undoable, offerUndo, takeUndo, dismissUndo: () => setUndoable(undefined) };
 }

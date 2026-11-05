@@ -1,6 +1,6 @@
-import { useEffect, useState, type ReactNode } from "react";
+import { useState, type ReactNode } from "react";
 import { NewAccountForm } from "../accounts/NewAccountForm";
-import { UNDO_TIMEOUT_MS, UndoBar } from "../components/UndoBar";
+import { UndoBar } from "../components/UndoBar";
 import type { ApiError } from "../api/client";
 import type { Credentials, Household, Member } from "../api/households-api";
 import { Doorbell, DoorbellPlate } from "./Doorbell";
@@ -45,17 +45,6 @@ export function HouseholdView({
   const [removeError, setRemoveError] = useState<string>();
   const invite = useInviteShare(household.name, household.inviteCode);
   const openStep = nextStepTitle(household);
-
-  useEffect(() => {
-    if (!removedMember) {
-      return;
-    }
-    const timeout = setTimeout(
-      () => setRemovedMember(undefined),
-      UNDO_TIMEOUT_MS,
-    );
-    return () => clearTimeout(timeout);
-  }, [removedMember]);
 
   async function removeMember(member: Member) {
     setRemoveError(undefined);
@@ -193,7 +182,12 @@ export function HouseholdView({
       </div>
 
       {removedMember && (
-        <UndoBar message={`${removedMember.name} removed.`} onUndo={undoRemoval} />
+        <UndoBar
+          key={removedMember.id}
+          message={`${removedMember.name} removed.`}
+          onUndo={undoRemoval}
+          onExpire={() => setRemovedMember(undefined)}
+        />
       )}
     </div>
   );

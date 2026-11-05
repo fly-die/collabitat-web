@@ -480,7 +480,21 @@
   background: var(--color-ink);
   color: var(--color-surface);
   overflow: hidden;
-  animation: rise-in var(--motion-calm) var(--ease-out);
+  animation:
+    rise-in var(--motion-calm) var(--ease-out),
+    undo-fade var(--undo-duration) linear forwards;
+}
+
+/* Stays solid, then fades out over the last part of the countdown. */
+@keyframes undo-fade {
+  0%,
+  60% {
+    opacity: 1;
+  }
+
+  100% {
+    opacity: 0;
+  }
 }
 
 /* Burns down while Undo is still available. */
