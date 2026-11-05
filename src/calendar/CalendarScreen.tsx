@@ -5,11 +5,13 @@ import { Sheet } from "../components/Sheet";
 import { UndoBar } from "../components/UndoBar";
 import { useUndoable } from "../components/useUndoable";
 import { todayIsoDate } from "../money/money-format";
-import { EVERYONE, describeUpcomingDay } from "./calendar-format";
+import { columnName, describeUpcomingDay } from "./calendar-format";
 import { EntryScreen } from "./EntryScreen";
 import { useCalendar } from "./useCalendar";
 
 type Editing = { entry?: CalendarEntry };
+
+const ALL = "all";
 
 const asNew = ({ title, day, time, columnId }: CalendarEntry): NewCalendarEntry => ({ title, day, time, columnId });
 
@@ -17,7 +19,7 @@ interface CalendarScreenProps {
   onBack: () => void;
 }
 
-// The next four weeks: a row for each day with dates, a column for everyone and for each person or group.
+// The next four weeks, day by day: each date says who it is for, and the list can show one person or group.
 export function CalendarScreen({ onBack }: CalendarScreenProps) {
   const today = todayIsoDate();
   const { state, reload, retry } = useCalendar(today);
@@ -25,6 +27,7 @@ export function CalendarScreen({ onBack }: CalendarScreenProps) {
   const [editing, setEditing] = useState<Editing>();
   const [newColumnName, setNewColumnName] = useState("");
   const [error, setError] = useState<string>();
+  const [shownColumn, setShownColumn] = useState(ALL);
 
   async function run(action: () => Promise<unknown>) {
     setError(undefined);
@@ -58,8 +61,11 @@ export function CalendarScreen({ onBack }: CalendarScreenProps) {
   }
 
   const { columns, entries } = state.view;
-  const lanes: { id: string | null; name: string }[] = [{ id: null, name: EVERYONE }, ...columns];
-  const days = [...new Set(entries.map((entry) => entry.day))];
+  // A person's view keeps the dates for everyone, since those are theirs too.
+  const activeColumn = columns.some((column) => column.id === shownColumn) ? shownColumn : ALL;
+  const shownEntries =
+    activeColumn === ALL ? entries : entries.filter((entry) => entry.columnId === activeColumn || entry.columnId === null);
+  const days = [...new Set(shownEntries.map((entry) => entry.day))];
 
   async function saveEntry(entry: NewCalendarEntry) {
     const existing = editing?.entry;
@@ -104,46 +110,51 @@ export function CalendarScreen({ onBack }: CalendarScreenProps) {
           Add a date
         </button>
 
+        {columns.length > 0 && (
+          <div className="calendar__filters" role="group" aria-label="Show dates for">
+            {[{ id: ALL, name: "All" }, ...columns].map((choice) => (
+              <button
+                key={choice.id}
+                className={`meals__pick${activeColumn === choice.id ? " meals__pick--chosen" : ""}`}
+                type="button"
+                aria-pressed={activeColumn === choice.id}
+                onClick={() => setShownColumn(choice.id)}
+              >
+                {choice.name}
+              </button>
+            ))}
+          </div>
+        )}
+
         {days.length === 0 ? (
           <p className="empty-state">
-            Nothing in the next 4 weeks. Add dates like a dentist appointment, a birthday or a parents&apos; evening, for one
-            person or for everyone.
+            {activeColumn === ALL
+              ? "Nothing in the next 4 weeks. Add dates like a dentist appointment, a birthday or a parents\u2019 evening, for one person or for everyone."
+              : "Nothing for them in the next 4 weeks."}
           </p>
         ) : (
-          <div className="calendar__scroll">
-            <table className="calendar__grid">
-              <caption className="visually-hidden">Dates in the next 4 weeks</caption>
-              <thead>
-                <tr>
-                  <td />
-                  {lanes.map((lane) => (
-                    <th key={lane.id ?? EVERYONE} scope="col">
-                      {lane.name}
-                    </th>
+          days.map((day) => (
+            <section key={day} className="calendar__day" aria-labelledby={`day-${day}`}>
+              <h2 id={`day-${day}`} className={`calendar__day-title${day === today ? " calendar__day-title--today" : ""}`}>
+                {describeUpcomingDay(day, today)}
+              </h2>
+              <ul className="panel" aria-labelledby={`day-${day}`}>
+                {shownEntries
+                  .filter((entry) => entry.day === day)
+                  .map((entry) => (
+                    <li key={entry.id} className="panel__row">
+                      <button className="calendar__entry" type="button" onClick={() => setEditing({ entry })}>
+                        <span className="calendar__time">{entry.time ?? "All day"}</span>
+                        <span className="calendar__what">
+                          <span className="calendar__title">{entry.title}</span>
+                          <span className="calendar__who">{columnName(columns, entry.columnId)}</span>
+                        </span>
+                      </button>
+                    </li>
                   ))}
-                </tr>
-              </thead>
-              <tbody>
-                {days.map((day) => (
-                  <tr key={day} className={day === today ? "calendar__today" : undefined}>
-                    <th scope="row">{describeUpcomingDay(day, today)}</th>
-                    {lanes.map((lane) => (
-                      <td key={lane.id ?? EVERYONE}>
-                        {entries
-                          .filter((entry) => entry.day === day && entry.columnId === lane.id)
-                          .map((entry) => (
-                            <button key={entry.id} className="calendar__entry" type="button" onClick={() => setEditing({ entry })}>
-                              {entry.time && <span className="calendar__time">{entry.time}</span>}
-                              <span>{entry.title}</span>
-                            </button>
-                          ))}
-                      </td>
-                    ))}
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
+              </ul>
+            </section>
+          ))
         )}
 
         <section className="calendar__columns" aria-labelledby="columns-heading">
