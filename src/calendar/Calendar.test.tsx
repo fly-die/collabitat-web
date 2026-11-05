@@ -36,14 +36,14 @@ async function addDate(title: string, { day = todayIsoDate(), time = "", column 
   type("Day", day);
   type("Time, if it has one", time);
   fireEvent.click(screen.getByRole("button", { name: "Add date" }));
-  await screen.findByRole("button", { name: new RegExp(`${title}$`) });
+  await screen.findByRole("button", { name: new RegExp(`${title}${column}$`) });
 }
 
-// The text of each lane's cell in a day's row: Everyone first, then the columns.
-const cellsOf = (dayLabel: string) =>
-  within(screen.getByRole("row", { name: new RegExp(`^${dayLabel}`) }))
-    .getAllByRole("cell")
-    .map((cell) => cell.textContent);
+// Each date on a day as "time, title, who it is for".
+const datesOn = (dayLabel: string) =>
+  within(screen.getByRole("list", { name: dayLabel }))
+    .getAllByRole("listitem")
+    .map((row) => row.textContent);
 
 describe("calendar", () => {
   beforeEach(() => {
@@ -61,14 +61,21 @@ describe("calendar", () => {
     await addDate("Bin day");
     await addDate("Too far for Home", { day: addDays(todayIsoDate(), 9) });
 
-    expect(screen.getAllByRole("columnheader").map((header) => header.textContent)).toEqual(["Everyone", "Noah"]);
-    expect(cellsOf("Today")).toEqual(["Bin day", ""]);
-    expect(cellsOf("Tomorrow")).toEqual(["", "14:30Dentist"]);
+    expect(datesOn("Today")).toEqual(["All dayBin dayEveryone"]);
+    expect(datesOn("Tomorrow")).toEqual(["14:30DentistNoah"]);
+    await addColumn("Family");
+    await addDate("Grandma's birthday", { day: addDays(todayIsoDate(), 1), column: "Family" });
+    fireEvent.click(screen.getByRole("button", { name: "Noah" }));
+    expect(screen.getByRole("button", { name: "Noah" })).toHaveAttribute("aria-pressed", "true");
+    expect(datesOn("Tomorrow")).toEqual(["14:30DentistNoah"]);
+    expect(datesOn("Today")).toEqual(["All dayBin dayEveryone"]);
+    fireEvent.click(screen.getByRole("button", { name: "All" }));
 
     fireEvent.click(screen.getByRole("button", { name: "Back" }));
     const comingUp = await screen.findByRole("list", { name: "Coming up" });
     expect(within(comingUp).getAllByRole("listitem").map((row) => row.textContent)).toEqual([
       "Today: Bin dayEveryone",
+      "Tomorrow: Grandma's birthdayFamily",
       "Tomorrow: DentistNoah, 14:30",
     ]);
   });
@@ -85,21 +92,21 @@ describe("calendar", () => {
     fireEvent.click(screen.getByRole("button", { name: "Remove Noah" }));
     expect(await screen.findByRole("alert")).toHaveTextContent("Noah still has 1 upcoming date. Move or remove them first.");
 
-    fireEvent.click(screen.getByRole("button", { name: "09:15Dentist" }));
+    fireEvent.click(screen.getByRole("button", { name: "09:15DentistNoah" }));
     fireEvent.change(screen.getByLabelText("For"), { target: { value: "" } });
     fireEvent.click(screen.getByRole("button", { name: "Save date" }));
-    await waitFor(() => expect(cellsOf("Today")).toEqual(["09:15Dentist", ""]));
+    await waitFor(() => expect(datesOn("Today")).toEqual(["09:15DentistEveryone"]));
 
     fireEvent.click(screen.getByRole("button", { name: "Remove Noah" }));
     expect(await screen.findByRole("status")).toHaveTextContent("Noah removed.");
     fireEvent.click(screen.getByRole("button", { name: "Undo" }));
     expect(await screen.findByRole("button", { name: "Remove Noah" })).toBeInTheDocument();
 
-    fireEvent.click(screen.getByRole("button", { name: "09:15Dentist" }));
+    fireEvent.click(screen.getByRole("button", { name: "09:15DentistEveryone" }));
     fireEvent.click(screen.getByRole("button", { name: "Remove date" }));
     expect(await screen.findByRole("status")).toHaveTextContent("Dentist removed.");
     expect(await screen.findByText(/^Nothing in the next 4 weeks\./)).toBeInTheDocument();
     fireEvent.click(screen.getByRole("button", { name: "Undo" }));
-    expect(await screen.findByRole("button", { name: "09:15Dentist" })).toBeInTheDocument();
+    expect(await screen.findByRole("button", { name: "09:15DentistEveryone" })).toBeInTheDocument();
   });
 });
