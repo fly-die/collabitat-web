@@ -30,7 +30,12 @@ interface ShoppingListProps {
   onUndoable: (undoable: Undoable) => void;
   // The checkout dialog opened or closed, so the screen behind it rests or wakes up.
   onSheetChange: (isOpen: boolean) => void;
+  // Goes up when something else changed the list, like a recipe added to it.
+  changeCount: number;
 }
+
+// Unticked first, ticked at the end, each in the order the list gives them.
+const tickedLast = (items: ShoppingItem[]) => [...items.filter((item) => !item.checked), ...items.filter((item) => item.checked)];
 
 // Most likely still at the till: the expense goes, the trip goes on, and what was bought is back in the basket.
 async function undoCheckout(tripFrom: string, expenseId: string, boughtLines: string[]) {
@@ -58,7 +63,7 @@ export function basketCount(items: ShoppingItem[]) {
   return `${items.filter((item) => item.checked).length} of ${items.length} in the basket`;
 }
 
-export function ShoppingList({ household, monday, onUndoable, onSheetChange }: ShoppingListProps) {
+export function ShoppingList({ household, monday, onUndoable, onSheetChange, changeCount }: ShoppingListProps) {
   const fieldId = useId();
   const [list, setList] = useState<List>();
   const [loadAttempt, setLoadAttempt] = useState(0);
@@ -87,7 +92,7 @@ export function ShoppingList({ household, monday, onUndoable, onSheetChange }: S
     return () => {
       isCurrent = false;
     };
-  }, [monday, loadAttempt]);
+  }, [monday, loadAttempt, changeCount]);
 
   async function run(change: () => Promise<List>) {
     setError(undefined);
@@ -164,9 +169,16 @@ export function ShoppingList({ household, monday, onUndoable, onSheetChange }: S
 
   return (
     <section className="chores__group" aria-labelledby={`${fieldId}-heading`}>
-      <h2 id={`${fieldId}-heading`} className="section-title">
-        Shopping list
-      </h2>
+      <div className="shopping__header">
+        <h2 id={`${fieldId}-heading`} className="section-title">
+          Shopping list
+        </h2>
+        {!trip && items.length > 0 && (
+          <button className="button button--outline shopping__start" type="button" onClick={() => void run(() => shoppingApi.startTrip(monday))}>
+            Start shopping
+          </button>
+        )}
+      </div>
       {trip && (
         <div className="shopping__trip">
           <p className="shopping__trip-status" aria-live="polite">
@@ -176,7 +188,7 @@ export function ShoppingList({ household, monday, onUndoable, onSheetChange }: S
           </p>
           {isMyTrip && (
             <div className="shopping__trip-actions">
-              <button className="button button--block" type="button" onClick={() => openCheckout(trip.from)}>
+              <button className="button" type="button" onClick={() => openCheckout(trip.from)}>
                 Check out
               </button>
               <button className="button button--quiet" type="button" onClick={() => void run(() => shoppingApi.stopTrip(trip.from))}>
@@ -185,11 +197,6 @@ export function ShoppingList({ household, monday, onUndoable, onSheetChange }: S
             </div>
           )}
         </div>
-      )}
-      {!trip && items.length > 0 && (
-        <button className="button button--outline button--block shopping__start" type="button" onClick={() => void run(() => shoppingApi.startTrip(monday))}>
-          Start shopping
-        </button>
       )}
       <form className="shopping__add" onSubmit={handleAdd}>
         <input
@@ -216,7 +223,7 @@ export function ShoppingList({ household, monday, onUndoable, onSheetChange }: S
         <div key={category} className="shopping__group">
           <h3 className="shopping__category">{CATEGORY_LABELS[category]}</h3>
           <ul className="panel" aria-label={CATEGORY_LABELS[category]}>
-            {inCategory.map((item) => (
+            {tickedLast(inCategory).map((item) => (
               <li key={item.key} className={`panel__row expense shopping__item${item.checked ? " shopping__item--checked" : ""}`}>
                 <label className="shopping__tick">
                   <input type="checkbox" aria-label={describeIngredient(item)} checked={item.checked} onChange={() => toggle(item)} />
@@ -229,12 +236,14 @@ export function ShoppingList({ household, monday, onUndoable, onSheetChange }: S
                 </label>
                 {item.extraId && (
                   <button
-                    className="button button--quiet expense__delete"
+                    className="shopping__remove"
                     type="button"
                     aria-label={`Remove ${describeIngredient(item)}`}
                     onClick={() => remove(item, item.extraId as string)}
                   >
-                    Remove
+                    <svg viewBox="0 0 24 24" aria-hidden="true">
+                      <path d="M7 7l10 10M17 7L7 17" />
+                    </svg>
                   </button>
                 )}
               </li>

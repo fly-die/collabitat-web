@@ -50,6 +50,12 @@ export const shoppingApi = {
       `/household/shopping-list/items/${safeId(itemId, ITEM_NOT_FOUND_CODE, "That item is already gone.")}?${week(from)}`,
       { method: "DELETE" },
     ),
+  // A recipe's ingredients as items added by hand; the ids are for taking them off again.
+  addRecipe: (from: string, recipeId: string) =>
+    request<ShoppingList & { addedItemIds: string[] }>(
+      `/household/shopping-list/recipes/${safeId(recipeId, ITEM_NOT_FOUND_CODE, "That recipe is already gone.")}?${week(from)}`,
+      { method: "POST" },
+    ),
   check: (from: string, key: string, checked: boolean) =>
     request<ShoppingList>(`/household/shopping-list/checks?${week(from)}`, { method: "PUT", body: JSON.stringify({ key, checked }) }),
   // The list someone is shopping right now, whichever week it is.

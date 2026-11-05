@@ -8,6 +8,7 @@ import { UndoBar } from "../components/UndoBar";
 import { useUndoable } from "../components/useUndoable";
 import { formatDay, todayIsoDate } from "../money/money-format";
 import { describeIngredient, describeWeek, ingredientLine, mondayOf, weekDays, addDays, DAYS_IN_WEEK } from "./week";
+import { shoppingApi } from "../api/shopping-api";
 import { ShoppingList } from "./ShoppingList";
 import { useMeals } from "./useMeals";
 
@@ -53,6 +54,8 @@ export function MealsView({ household }: MealsViewProps) {
   const { undoable, offerUndo, takeUndo, dismissUndo } = useUndoable();
   const [error, setError] = useState<string>();
   const [isCheckingOut, setIsCheckingOut] = useState(false);
+  const [shoppingChanges, setShoppingChanges] = useState(0);
+  const shoppingChanged = () => setShoppingChanges((count) => count + 1);
   const backToWeek = () => setScreen({ name: "week" });
 
   async function run(action: () => Promise<unknown>) {
@@ -90,6 +93,23 @@ export function MealsView({ household }: MealsViewProps) {
   async function deleteRecipe(recipe: Recipe) {
     await removeRecipe(recipe.id);
     offerUndo({ message: `${recipe.title} deleted.`, undo: () => addRecipe(asNewRecipe(recipe)) });
+  }
+
+  async function addToShoppingList(recipe: Recipe) {
+    backToWeek();
+    try {
+      const { addedItemIds } = await shoppingApi.addRecipe(monday, recipe.id);
+      shoppingChanged();
+      offerUndo({
+        message: `${recipe.title} added to the shopping list.`,
+        undo: async () => {
+          await Promise.all(addedItemIds.map((itemId) => shoppingApi.remove(monday, itemId)));
+          shoppingChanged();
+        },
+      });
+    } catch (addError) {
+      setError((addError as ApiError).message);
+    }
   }
 
   async function changeRecipe(recipe: Recipe, changed: NewRecipe) {
@@ -145,7 +165,12 @@ export function MealsView({ household }: MealsViewProps) {
           ) : (
             <p className="chore-detail">No ingredients yet.</p>
           )}
-          <button className="button button--block" type="button" onClick={() => setScreen({ name: "edit-recipe", recipe })}>
+          {recipe.ingredients.length > 0 && (
+            <button className="button button--block" type="button" onClick={() => void addToShoppingList(recipe)}>
+              Add to shopping list
+            </button>
+          )}
+          <button className="button button--block button--outline recipe__edit" type="button" onClick={() => setScreen({ name: "edit-recipe", recipe })}>
             Edit recipe
           </button>
           <button
@@ -206,7 +231,13 @@ export function MealsView({ household }: MealsViewProps) {
           })}
         </ul>
 
-        <ShoppingList household={household} monday={monday} onUndoable={offerUndo} onSheetChange={setIsCheckingOut} />
+        <ShoppingList
+          household={household}
+          monday={monday}
+          onUndoable={offerUndo}
+          onSheetChange={setIsCheckingOut}
+          changeCount={shoppingChanges}
+        />
 
         <section className="chores__group" aria-labelledby="recipes-heading">
           <h2 id="recipes-heading" className="section-title">

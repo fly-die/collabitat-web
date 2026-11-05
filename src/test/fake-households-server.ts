@@ -427,6 +427,12 @@ export function createFakeHouseholdsServer({ pushPublicKey }: { pushPublicKey?: 
         }
         return json(method === "POST" ? 201 : 200, shoppingListOf(household, from));
       }
+      if (segments[2] === "recipes" && method === "POST") {
+        const recipe = (recipesByHouseholdId.get(household.id) ?? []).find((candidate) => candidate.id === segments[3]);
+        const added = (recipe?.ingredients ?? []).map((ingredient) => ({ id: crypto.randomUUID(), line: ingredient.name }));
+        extrasByHouseholdId.set(household.id, [...extras, ...added]);
+        return json(201, { ...shoppingListOf(household, from), addedItemIds: added.map((item) => item.id) });
+      }
       if (segments[2] === "checks") {
         if (body.checked) {
           checks.add(`${from}|${body.key}`);

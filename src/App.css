@@ -1005,13 +1005,22 @@ body.has-sheet {
   text-decoration: line-through;
 }
 
+/* The heading and "Start shopping" share a row, so the button never pushes the list down. */
+.shopping__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-3);
+}
+
 .shopping__start {
-  margin-bottom: var(--space-4);
+  flex: none;
+  font-size: var(--font-size-small);
 }
 
 .shopping__trip {
   margin-bottom: var(--space-4);
-  padding: var(--space-4);
+  padding: var(--space-3) var(--space-4);
   border: 1px solid var(--color-accent);
   border-radius: var(--radius-large);
   background: var(--color-accent-tint);
@@ -1024,16 +1033,33 @@ body.has-sheet {
 
 .shopping__trip-actions {
   display: flex;
-  flex-direction: column;
-  align-items: flex-start;
-  gap: var(--space-1);
-  margin-top: var(--space-3);
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-2);
+  margin-top: var(--space-2);
 }
 
-/* Lines up with the status text and keeps its touch target without padding the box. */
-.shopping__trip-actions .button--quiet {
-  margin-bottom: calc(-1 * var(--space-2));
-  padding-left: 0;
+/* A small cross instead of a word, still a full-size touch target. */
+.shopping__remove {
+  display: grid;
+  flex: none;
+  place-items: center;
+  width: var(--touch-target);
+  height: var(--touch-target);
+  border: 0;
+  border-radius: var(--radius);
+  background: transparent;
+  color: var(--color-ink-muted);
+  cursor: pointer;
+}
+
+.shopping__remove svg {
+  width: 1.125rem;
+  height: 1.125rem;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 2;
+  stroke-linecap: round;
 }
 
 .recipe__ingredients {
@@ -1659,4 +1685,8 @@ select.text-input {
 
 .meals__past .item-icon {
   opacity: 0.5;
+}
+
+.recipe__edit {
+  margin-top: var(--space-2);
 }
