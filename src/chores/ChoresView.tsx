@@ -1,7 +1,7 @@
 import { useState, type ReactNode } from "react";
 import type { ApiError } from "../api/client";
 import type { Household } from "../api/households-api";
-import type { Task } from "../api/tasks-api";
+import type { NewTask, Task } from "../api/tasks-api";
 import { Sheet } from "../components/Sheet";
 import { UndoBar } from "../components/UndoBar";
 import { useUndoable } from "../components/useUndoable";
@@ -15,7 +15,9 @@ interface ChoresViewProps {
   household: Household;
 }
 
-type ChoresScreen = { name: "overview" } | { name: "add" } | { name: "chore"; task: Task };
+type ChoresScreen = { name: "overview" } | { name: "add" } | { name: "chore"; task: Task } | { name: "edit"; task: Task };
+
+const asNewTask = ({ title, every, unit, firstDueOn, rotation }: Task) => ({ title, every, unit, firstDueOn, rotationMemberIds: rotation });
 
 function myTurnHint(myDueCount: number, dueCount: number) {
   if (dueCount === 1) {
@@ -28,7 +30,7 @@ function myTurnHint(myDueCount: number, dueCount: number) {
 }
 
 export function ChoresView({ household }: ChoresViewProps) {
-  const { state, retry, addChore, removeChore, completeChore } = useChores();
+  const { state, retry, addChore, updateChore, removeChore, completeChore } = useChores();
   const [screen, setScreen] = useState<ChoresScreen>({ name: "overview" });
   const { undoable, offerUndo, takeUndo } = useUndoable();
   const [error, setError] = useState<string>();
@@ -67,6 +69,11 @@ export function ChoresView({ household }: ChoresViewProps) {
     });
   }
 
+  async function changeChore(task: Task, changed: NewTask) {
+    await updateChore(task.id, changed);
+    offerUndo({ message: `${changed.title.trim()} saved.`, undo: () => updateChore(task.id, asNewTask(task)) });
+  }
+
   if (state.status === "loading") {
     return <p className="screen hint">Looking at what needs doing…</p>;
   }
@@ -84,7 +91,21 @@ export function ChoresView({ household }: ChoresViewProps) {
   if (screen.name === "add") {
     sheet = (
       <Sheet label="Add a chore" onClose={backToOverview}>
-        <AddChoreScreen household={household} onAdd={addChore} onBack={backToOverview} />
+        <AddChoreScreen household={household} tasks={state.tasks} onSave={addChore} onBack={backToOverview} />
+      </Sheet>
+    );
+  }
+  if (screen.name === "edit") {
+    const { task } = screen;
+    sheet = (
+      <Sheet label="Edit chore" onClose={backToOverview}>
+        <AddChoreScreen
+          household={household}
+          tasks={state.tasks}
+          task={task}
+          onSave={(changed) => changeChore(task, changed)}
+          onBack={backToOverview}
+        />
       </Sheet>
     );
   }
@@ -111,6 +132,9 @@ export function ChoresView({ household }: ChoresViewProps) {
             {error}
           </p>
         )}
+        <button className="button button--block" type="button" onClick={() => setScreen({ name: "edit", task })}>
+          Edit chore
+        </button>
         <button
           className="button button--quiet expense-screen__delete"
           type="button"

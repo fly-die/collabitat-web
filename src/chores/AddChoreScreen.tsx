@@ -1,8 +1,9 @@
 import { useId, useState, type FormEvent } from "react";
 import type { ApiError } from "../api/client";
 import type { Household } from "../api/households-api";
-import type { IntervalUnit, NewTask } from "../api/tasks-api";
+import type { IntervalUnit, NewTask, Task } from "../api/tasks-api";
 import { todayIsoDate } from "../money/money-format";
+import { startWithFewestTurns } from "./chore-format";
 
 const DEFAULT_EVERY = "1";
 const DEFAULT_UNIT: IntervalUnit = "week";
@@ -12,7 +13,11 @@ const WHOLE_NUMBER_PATTERN = /^\d{1,3}$/;
 
 interface AddChoreScreenProps {
   household: Household;
-  onAdd: (task: NewTask) => Promise<unknown>;
+  // The household's chores, to share out first turns.
+  tasks: Task[];
+  // Set when editing; the form starts with what it has.
+  task?: Task;
+  onSave: (task: NewTask) => Promise<unknown>;
   onBack: () => void;
 }
 
@@ -23,13 +28,16 @@ interface FieldErrors {
   form?: string;
 }
 
-export function AddChoreScreen({ household, onAdd, onBack }: AddChoreScreenProps) {
+// Adds a chore, or changes one: what was done and whose turn it is stay as they are.
+export function AddChoreScreen({ household, tasks, task, onSave, onBack }: AddChoreScreenProps) {
   const fieldId = useId();
-  const [title, setTitle] = useState("");
-  const [every, setEvery] = useState(DEFAULT_EVERY);
-  const [unit, setUnit] = useState<IntervalUnit>(DEFAULT_UNIT);
-  const [firstDueOn, setFirstDueOn] = useState(() => todayIsoDate());
-  const [rotation, setRotation] = useState(() => household.members.map((member) => member.id));
+  const [title, setTitle] = useState(task?.title ?? "");
+  const [every, setEvery] = useState(task ? String(task.every) : DEFAULT_EVERY);
+  const [unit, setUnit] = useState<IntervalUnit>(task?.unit ?? DEFAULT_UNIT);
+  const [firstDueOn, setFirstDueOn] = useState(() => task?.firstDueOn ?? todayIsoDate());
+  const [rotation, setRotation] = useState(() => task?.rotation ?? household.members.map((member) => member.id));
+  // The first day only matters until the chore has been done once.
+  const canPickFirstDay = !task?.lastCompletion;
   const [errors, setErrors] = useState<FieldErrors>({});
   const [isSubmitting, setIsSubmitting] = useState(false);
   const everyCount = WHOLE_NUMBER_PATTERN.test(every.trim()) ? Number(every) : Number.NaN;
@@ -51,7 +59,8 @@ export function AddChoreScreen({ household, onAdd, onBack }: AddChoreScreenProps
     }
     setIsSubmitting(true);
     try {
-      await onAdd({ title, every: everyCount, unit, firstDueOn, rotationMemberIds: rotation });
+      const rotationMemberIds = task ? rotation : startWithFewestTurns(rotation, tasks);
+      await onSave({ title, every: everyCount, unit, firstDueOn, rotationMemberIds });
       onBack();
     } catch (submitError) {
       setErrors({ form: (submitError as ApiError).message });
@@ -59,13 +68,18 @@ export function AddChoreScreen({ household, onAdd, onBack }: AddChoreScreenProps
     }
   }
 
-  // Kept in household order, which is the order turns go in.
+  // A new chore keeps household order. A chore being changed keeps its order, and someone
+  // joining the turns comes last, so the turns already planned stay the same.
   const toggleTurn = (memberId: string) =>
-    setRotation((current) =>
-      current.includes(memberId)
-        ? current.filter((id) => id !== memberId)
-        : household.members.map((member) => member.id).filter((id) => id === memberId || current.includes(id)),
-    );
+    setRotation((current) => {
+      if (current.includes(memberId)) {
+        return current.filter((id) => id !== memberId);
+      }
+      if (task) {
+        return [...current, memberId];
+      }
+      return household.members.map((member) => member.id).filter((id) => id === memberId || current.includes(id));
+    });
 
   const errorText = (key: keyof FieldErrors) =>
     errors[key] && (
@@ -81,7 +95,7 @@ export function AddChoreScreen({ household, onAdd, onBack }: AddChoreScreenProps
       <button className="back-link" type="button" onClick={onBack}>
         Cancel
       </button>
-      <h1 className="page-title">Add a chore</h1>
+      <h1 className="page-title">{task ? "Edit chore" : "Add a chore"}</h1>
 
       <form className="stacked-form" onSubmit={handleSubmit} noValidate>
         <label className="field-label" htmlFor={`${fieldId}-title`}>
@@ -93,7 +107,7 @@ export function AddChoreScreen({ household, onAdd, onBack }: AddChoreScreenProps
           value={title}
           placeholder="Take out the trash"
           autoComplete="off"
-          autoFocus
+          autoFocus={!task}
           {...invalidProps("title")}
           onChange={(event) => setTitle(event.target.value)}
         />
@@ -136,20 +150,24 @@ export function AddChoreScreen({ household, onAdd, onBack }: AddChoreScreenProps
         </fieldset>
         {errorText("rotation")}
 
-        <label className="field-label" htmlFor={`${fieldId}-first`}>
-          First time
-        </label>
-        <input
-          id={`${fieldId}-first`}
-          className="text-input"
-          type="date"
-          value={firstDueOn}
-          required
-          onChange={(event) => setFirstDueOn(event.target.value || todayIsoDate())}
-        />
+        {canPickFirstDay && (
+          <>
+            <label className="field-label" htmlFor={`${fieldId}-first`}>
+              First time
+            </label>
+            <input
+              id={`${fieldId}-first`}
+              className="text-input"
+              type="date"
+              value={firstDueOn}
+              required
+              onChange={(event) => setFirstDueOn(event.target.value || todayIsoDate())}
+            />
+          </>
+        )}
 
         <button className="button button--block button--submit" type="submit" disabled={isSubmitting}>
-          Add chore
+          {task ? "Save chore" : "Add chore"}
         </button>
         {errorText("form")}
       </form>

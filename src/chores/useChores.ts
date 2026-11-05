@@ -66,6 +66,7 @@ export function useChores() {
     completeChore,
     retry,
     addChore: (task: NewTask) => apply(tasksApi.add(task)),
+    updateChore: (taskId: string, task: NewTask) => apply(tasksApi.update(taskId, task)),
     removeChore: (taskId: string) => apply(tasksApi.remove(taskId)),
   };
 }

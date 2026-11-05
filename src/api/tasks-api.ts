@@ -36,6 +36,7 @@ const taskPath = (taskId: string) =>
 export const tasksApi = {
   list: () => request<Tasks>("/household/tasks"),
   add: (task: NewTask) => request<Tasks>("/household/tasks", { method: "POST", body: JSON.stringify(task) }),
+  update: (taskId: string, task: NewTask) => request<Tasks>(taskPath(taskId), { method: "PUT", body: JSON.stringify(task) }),
   remove: (taskId: string) => request<Tasks>(taskPath(taskId), { method: "DELETE" }),
   markDone: (taskId: string, doneOn: string) =>
     request<Tasks>(`${taskPath(taskId)}/completions`, { method: "POST", body: JSON.stringify({ doneOn }) }),

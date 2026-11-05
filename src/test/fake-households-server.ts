@@ -488,6 +488,10 @@ export function createFakeHouseholdsServer({ pushPublicKey }: { pushPublicKey?: 
       if (segments[2] && !task) {
         return json(404, { error: "TASK_NOT_FOUND", message: "That chore is already gone." });
       }
+      if (task && method === "PUT") {
+        Object.assign(task, { ...body, title: body.title.trim() });
+        return json(200, tasksOf(household));
+      }
       if (task && method === "POST") {
         task.completions.push({ id: crypto.randomUUID(), doneOn: body.doneOn, memberId: currentMemberId });
         return json(201, tasksOf(household));

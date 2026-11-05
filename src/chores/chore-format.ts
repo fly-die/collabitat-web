@@ -30,3 +30,15 @@ export function describeDue(isoDay: string, now = new Date()) {
 export function describeInterval(every: number, unit: IntervalUnit) {
   return every === 1 ? `Every ${unit}` : `Every ${plural(every, unit)}`;
 }
+
+// A new chore's turns start with whoever has the fewest chores on their turn right now
+// (the earliest in the order on a tie), so whoever sets things up doesn't get every first turn.
+export function startWithFewestTurns(rotation: string[], tasks: { turnMemberId: string | null }[]) {
+  if (rotation.length === 0) {
+    return rotation;
+  }
+  const turnsOf = (memberId: string) => tasks.filter((task) => task.turnMemberId === memberId).length;
+  const first = rotation.reduce((fewest, memberId) => (turnsOf(memberId) < turnsOf(fewest) ? memberId : fewest));
+  const start = rotation.indexOf(first);
+  return [...rotation.slice(start), ...rotation.slice(0, start)];
+}
