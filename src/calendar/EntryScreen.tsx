@@ -58,7 +58,6 @@ export function EntryScreen({ columns, today, entry, onSave, onRemove, onBack }:
           className="text-input"
           placeholder="Dentist"
           autoComplete="off"
-          autoFocus={!entry}
           value={title}
           onChange={(event) => setTitle(event.target.value)}
           {...(titleError ? { "aria-invalid": true, "aria-describedby": `${fieldId}-title-error` } : {})}

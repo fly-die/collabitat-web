@@ -107,7 +107,6 @@ export function AddChoreScreen({ household, tasks, task, onSave, onBack }: AddCh
           value={title}
           placeholder="Take out the trash"
           autoComplete="off"
-          autoFocus={!task}
           {...invalidProps("title")}
           onChange={(event) => setTitle(event.target.value)}
         />

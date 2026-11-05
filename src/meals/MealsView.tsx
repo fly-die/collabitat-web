@@ -311,7 +311,6 @@ function PlanDinnerScreen({ household, date, meal, recipes, onSave, onClear, onB
           value={title}
           placeholder="Pasta al pomodoro"
           autoComplete="off"
-          autoFocus={!meal}
           onChange={(event) => setTitle(event.target.value)}
         />
         {recipes.length > 0 && (
@@ -412,7 +411,6 @@ function RecipeFormScreen({ recipe, onSave, onBack }: RecipeFormScreenProps) {
           value={title}
           placeholder="Pasta al pomodoro"
           autoComplete="off"
-          autoFocus={!recipe}
           onChange={(event) => setTitle(event.target.value)}
         />
         <label className="field-label" htmlFor={`${fieldId}-servings`}>

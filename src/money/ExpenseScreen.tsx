@@ -125,7 +125,6 @@ export function ExpenseScreen({ household, expense, onSave, onDelete, onBack, ti
           value={description}
           placeholder="Groceries"
           autoComplete="off"
-          autoFocus={!expense && !defaultDescription}
           {...invalidProps("description")}
           onChange={(event) => {
             setDescription(event.target.value);
@@ -144,7 +143,6 @@ export function ExpenseScreen({ household, expense, onSave, onDelete, onBack, ti
           placeholder="0.00"
           inputMode="decimal"
           autoComplete="off"
-          autoFocus={defaultDescription !== undefined}
           {...invalidProps("amount")}
           onChange={(event) => {
             setAmount(event.target.value);
