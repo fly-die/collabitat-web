@@ -1,4 +1,4 @@
-import { fireEvent, render, screen, within } from "@testing-library/react";
+import { fireEvent, render, screen, waitFor, within } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { App } from "../App";
 import { createFakeHouseholdsServer } from "../test/fake-households-server";
@@ -236,6 +236,36 @@ describe("meals", () => {
     fireEvent.click(screen.getByRole("button", { name: "Undo" }));
     expect(await screen.findByRole("button", { name: /^Pasta.*Serves 4, 1 ingredient$/ })).toBeInTheDocument();
     expect(screen.getByRole("button", { name: /^TodayPasta/ })).toBeInTheDocument();
+  });
+
+  it("adds a recipe to the shopping list in one tap, and Undo takes it off again", async () => {
+    await openMeals();
+    await addRecipe("Curry", "Reis\nKokosmilch");
+
+    fireEvent.click(screen.getByRole("button", { name: /^Curry.*Serves/ }));
+    fireEvent.click(screen.getByRole("button", { name: "Add to shopping list" }));
+
+    expect(await screen.findByRole("status")).toHaveTextContent("Curry added to the shopping list.");
+    expect(await screen.findByRole("checkbox", { name: "Reis" })).toBeInTheDocument();
+    expect(screen.getByRole("checkbox", { name: "Kokosmilch" })).toBeInTheDocument();
+    fireEvent.click(screen.getByRole("button", { name: "Undo" }));
+    await waitFor(() => expect(screen.queryByRole("checkbox", { name: "Reis" })).not.toBeInTheDocument());
+    expect(screen.queryByRole("checkbox", { name: "Kokosmilch" })).not.toBeInTheDocument();
+  });
+
+  it("moves ticked items to the end, so what's left stays on top", async () => {
+    await openMeals();
+    for (const item of ["Butter", "Eggs", "Bread"]) {
+      type("Add to the list", item);
+      fireEvent.click(screen.getByRole("button", { name: "Add" }));
+      await screen.findByRole("checkbox", { name: item });
+    }
+
+    fireEvent.click(screen.getByRole("checkbox", { name: "Butter" }));
+
+    await waitFor(() =>
+      expect(screen.getAllByRole("checkbox").map((box) => box.getAttribute("aria-label"))).toEqual(["Eggs", "Bread", "Butter"]),
+    );
   });
 
   it("deletes a recipe with undo, and shows next week", async () => {
