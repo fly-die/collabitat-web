@@ -1687,3 +1687,26 @@ select.text-input {
 .recipe__edit {
   margin-top: var(--space-2);
 }
+
+/* Seven day buttons per meal, small enough to fit a phone's width in one row. */
+.meal-times__row {
+  margin-top: var(--space-3);
+}
+
+.meal-times__label {
+  display: block;
+  margin-bottom: var(--space-1);
+  font-weight: 700;
+}
+
+.meal-times__days {
+  display: flex;
+  gap: var(--space-1);
+}
+
+.meal-times__day {
+  flex: 1 1 0;
+  min-width: 0;
+  padding: 0;
+  font-size: var(--font-size-small);
+}

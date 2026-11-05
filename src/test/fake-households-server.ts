@@ -18,6 +18,7 @@ export function createFakeHouseholdsServer({ pushPublicKey }: { pushPublicKey?: 
   const pushDevices = new Map<string, string>();
   const recipesByHouseholdId = new Map<string, Recipe[]>();
   const mealsByHouseholdId = new Map<string, PlannedMeal[]>();
+  const mealTimesByHouseholdId = new Map<string, { breakfast: number[]; lunch: number[] }>();
   const extrasByHouseholdId = new Map<string, { id: string; line: string }[]>();
   const tripsByHouseholdId = new Map<string, { shopperMemberId: string; from: string; startedAt: string }>();
   // Ticked items as "<week>|<item key>".
@@ -36,7 +37,8 @@ export function createFakeHouseholdsServer({ pushPublicKey }: { pushPublicKey?: 
       .filter((meal) => meal.date >= from && meal.date <= to)
       .sort((first, second) => first.date.localeCompare(second.date));
     const recipes = [...(recipesByHouseholdId.get(household.id) ?? [])].sort((first, second) => first.title.localeCompare(second.title));
-    return { from, meals, recipes };
+    const mealTimes = mealTimesByHouseholdId.get(household.id) ?? { breakfast: [], lunch: [] };
+    return { from, meals, recipes, mealTimes };
   }
   // A small stand-in for the API's list: one row per ingredient line, a few known categories.
   function shoppingListOf(household: StoredHousehold, from: string) {
@@ -450,10 +452,15 @@ export function createFakeHouseholdsServer({ pushPublicKey }: { pushPublicKey?: 
       return json(method === "POST" ? 201 : 200, shoppingListOf(household, from));
     }
 
+    if (segments[1] === "meal-times" && method === "PUT") {
+      mealTimesByHouseholdId.set(household.id, { breakfast: body.breakfast, lunch: body.lunch });
+      return json(200, weekOf(household, new URL(String(input)).searchParams.get("from") ?? ""));
+    }
     if (segments[1] === "meals" || segments[1] === "recipes") {
       const from = new URL(String(input)).searchParams.get("from") ?? "";
+      const slot = (new URL(String(input)).searchParams.get("slot") ?? "dinner") as PlannedMeal["slot"];
       const recipes = recipesByHouseholdId.get(household.id) ?? [];
-      const meals = (mealsByHouseholdId.get(household.id) ?? []).filter((meal) => meal.date !== segments[2]);
+      const meals = (mealsByHouseholdId.get(household.id) ?? []).filter((meal) => !(meal.date === segments[2] && meal.slot === slot));
       if (segments[1] === "recipes" && method === "POST") {
         const ingredients = body.ingredientLines
           .map((line: string) => line.trim())
@@ -482,7 +489,7 @@ export function createFakeHouseholdsServer({ pushPublicKey }: { pushPublicKey?: 
       }
       if (segments[1] === "meals" && method === "PUT") {
         const recipe = recipes.find((candidate) => candidate.id === body.recipeId);
-        meals.push({ date: segments[2], title: body.title || recipe?.title || "", recipeId: recipe?.id ?? null, cookMemberId: body.cookMemberId ?? null });
+        meals.push({ date: segments[2], slot, title: body.title || recipe?.title || "", recipeId: recipe?.id ?? null, cookMemberId: body.cookMemberId ?? null });
       }
       if (segments[1] === "meals" && method !== "GET") {
         mealsByHouseholdId.set(household.id, meals);

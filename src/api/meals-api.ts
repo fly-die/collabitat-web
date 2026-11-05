@@ -13,8 +13,17 @@ export interface Recipe {
   ingredients: Ingredient[];
 }
 
+export type MealSlot = "breakfast" | "lunch" | "dinner";
+
+// Weekdays as 1 (Monday) to 7 (Sunday) that also get breakfast or lunch; dinner is always planned.
+export interface MealTimes {
+  breakfast: number[];
+  lunch: number[];
+}
+
 export interface PlannedMeal {
   date: string;
+  slot: MealSlot;
   title: string;
   recipeId: string | null;
   cookMemberId: string | null;
@@ -36,6 +45,7 @@ export interface MealWeek {
   from: string;
   meals: PlannedMeal[];
   recipes: Recipe[];
+  mealTimes: MealTimes;
 }
 
 const ISO_DATE_PATTERN = /^\d{4}-\d{2}-\d{2}$/;
@@ -53,10 +63,12 @@ const week = (from: string) => `from=${safeDate(from)}`;
 
 export const mealsApi = {
   week: (from: string) => request<MealWeek>(`/household/meals?${week(from)}`),
-  plan: (from: string, date: string, plan: MealPlan) =>
-    request<MealWeek>(`/household/meals/${safeDate(date)}?${week(from)}`, { method: "PUT", body: JSON.stringify(plan) }),
-  clear: (from: string, date: string) =>
-    request<MealWeek>(`/household/meals/${safeDate(date)}?${week(from)}`, { method: "DELETE" }),
+  plan: (from: string, date: string, plan: MealPlan, slot: MealSlot = "dinner") =>
+    request<MealWeek>(`/household/meals/${safeDate(date)}?${week(from)}&slot=${slot}`, { method: "PUT", body: JSON.stringify(plan) }),
+  clear: (from: string, date: string, slot: MealSlot = "dinner") =>
+    request<MealWeek>(`/household/meals/${safeDate(date)}?${week(from)}&slot=${slot}`, { method: "DELETE" }),
+  setMealTimes: (from: string, times: MealTimes) =>
+    request<MealWeek>(`/household/meal-times?${week(from)}`, { method: "PUT", body: JSON.stringify(times) }),
   addRecipe: (from: string, recipe: NewRecipe) =>
     request<MealWeek>(`/household/recipes?${week(from)}`, { method: "POST", body: JSON.stringify(recipe) }),
   updateRecipe: (from: string, recipeId: string, recipe: NewRecipe) =>

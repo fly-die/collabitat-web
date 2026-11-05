@@ -1,7 +1,7 @@
 import { useId, useState, type FormEvent, type ReactNode } from "react";
 import type { ApiError } from "../api/client";
 import type { Household } from "../api/households-api";
-import type { MealPlan, NewRecipe, PlannedMeal, Recipe } from "../api/meals-api";
+import type { MealPlan, MealSlot, NewRecipe, PlannedMeal, Recipe } from "../api/meals-api";
 import { ItemIcon, iconFor } from "../components/item-icons";
 import { Sheet } from "../components/Sheet";
 import { UndoBar } from "../components/UndoBar";
@@ -17,7 +17,7 @@ const WHOLE_NUMBER_PATTERN = /^\d{1,2}$/;
 
 type MealsScreen =
   | { name: "week" }
-  | { name: "plan"; date: string }
+  | { name: "plan"; date: string; slot: MealSlot }
   | { name: "add-recipe" }
   | { name: "recipe"; recipe: Recipe }
   | { name: "edit-recipe"; recipe: Recipe };
@@ -28,10 +28,18 @@ interface MealsViewProps {
   household: Household;
 }
 
-// "Dinner today", "Dinner yesterday", or "Dinner on Wed 4 Nov".
-function dinnerOn(date: string) {
+const SLOT_NAMES: Record<MealSlot, string> = { breakfast: "Breakfast", lunch: "Lunch", dinner: "Dinner" };
+const WEEKDAY_NAMES = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"];
+const SUNDAY = 7;
+
+// 1 (Monday) to 7 (Sunday), like the meal times.
+const weekdayOf = (date: string) => new Date(`${date}T00:00:00Z`).getUTCDay() || SUNDAY;
+
+// "Dinner today", "Breakfast yesterday", or "Lunch on Wed 4 Nov".
+function mealNameOn(date: string, slot: MealSlot) {
   const day = formatDay(date);
-  return /^[A-Z][a-z]+day$/.test(day) && !day.includes(" ") ? `Dinner ${day.toLowerCase()}` : `Dinner on ${day}`;
+  const name = SLOT_NAMES[slot];
+  return /^[A-Z][a-z]+day$/.test(day) && !day.includes(" ") ? `${name} ${day.toLowerCase()}` : `${name} on ${day}`;
 }
 
 export function cookLabel(household: Household, cookMemberId: string | null) {
@@ -49,7 +57,7 @@ export function MealsView({ household }: MealsViewProps) {
   const today = todayIsoDate();
   const thisMonday = mondayOf(today);
   const [monday, setMonday] = useState(thisMonday);
-  const { state, retry, plan, clear, addRecipe, updateRecipe, removeRecipe } = useMeals(monday);
+  const { state, retry, plan, clear, addRecipe, updateRecipe, removeRecipe, setMealTimes } = useMeals(monday);
   const [screen, setScreen] = useState<MealsScreen>({ name: "week" });
   const { undoable, offerUndo, takeUndo, dismissUndo } = useUndoable();
   const [error, setError] = useState<string>();
@@ -81,13 +89,23 @@ export function MealsView({ household }: MealsViewProps) {
     );
   }
 
-  const { meals, recipes } = state.week;
-  const mealOn = (date: string) => meals.find((meal) => meal.date === date);
+  const { meals, recipes, mealTimes } = state.week;
+  const mealOn = (date: string, slot: MealSlot) => meals.find((meal) => meal.date === date && meal.slot === slot);
+  const slotsOn = (date: string): MealSlot[] => [
+    ...(mealTimes.breakfast.includes(weekdayOf(date)) ? (["breakfast"] as const) : []),
+    ...(mealTimes.lunch.includes(weekdayOf(date)) ? (["lunch"] as const) : []),
+    "dinner",
+  ];
+  const toggleMealTime = (slot: "breakfast" | "lunch", weekday: number) => {
+    const days = mealTimes[slot];
+    const changed = days.includes(weekday) ? days.filter((day) => day !== weekday) : [...days, weekday];
+    void run(() => setMealTimes({ ...mealTimes, [slot]: changed }));
+  };
 
   async function clearDay(meal: PlannedMeal) {
-    await clear(meal.date);
+    await clear(meal.date, meal.slot);
     const { title, recipeId, cookMemberId } = meal;
-    offerUndo({ message: `${formatDay(meal.date)} cleared.`, undo: () => plan(meal.date, { title, recipeId, cookMemberId }) });
+    offerUndo({ message: `${formatDay(meal.date)} cleared.`, undo: () => plan(meal.date, { title, recipeId, cookMemberId }, meal.slot) });
   }
 
   async function deleteRecipe(recipe: Recipe) {
@@ -119,15 +137,16 @@ export function MealsView({ household }: MealsViewProps) {
 
   let sheet: ReactNode;
   if (screen.name === "plan") {
-    const meal = mealOn(screen.date);
+    const meal = mealOn(screen.date, screen.slot);
     sheet = (
-      <Sheet label={dinnerOn(screen.date)} onClose={backToWeek}>
+      <Sheet label={mealNameOn(screen.date, screen.slot)} onClose={backToWeek}>
         <PlanDinnerScreen
           household={household}
-          date={screen.date}
+          heading={mealNameOn(screen.date, screen.slot)}
+          slot={screen.slot}
           meal={meal}
           recipes={recipes}
-          onSave={(dinner) => plan(screen.date, dinner)}
+          onSave={(dinner) => plan(screen.date, dinner, screen.slot)}
           onClear={meal ? () => clearDay(meal) : undefined}
           onBack={backToWeek}
         />
@@ -212,22 +231,27 @@ export function MealsView({ household }: MealsViewProps) {
           </p>
         )}
 
-        <ul className="panel meals__week" aria-label="Dinners">
-          {weekDays(monday).map((date) => {
-            const meal = mealOn(date);
-            const cook = cookLabel(household, meal?.cookMemberId ?? null);
-            return (
-              <li key={date} className={`panel__row chore${date < today ? " meals__past" : ""}`}>
-                <button className="chore__open" type="button" onClick={() => setScreen({ name: "plan", date })}>
-                  <ItemIcon name={meal ? iconFor(meal.title, "food") : "food"} />
-                  <span className="chore__text">
-                    <span className="meals__day">{formatDay(date)}</span>
-                    <span className={meal ? "chore__title" : "meals__empty"}>{meal ? meal.title : "Nothing planned"}</span>
-                    {cook && <span className="chore__meta">{cook}</span>}
-                  </span>
-                </button>
-              </li>
-            );
+        <ul className="panel meals__week" aria-label="Meals">
+          {weekDays(monday).flatMap((date) => {
+            const slots = slotsOn(date);
+            return slots.map((slot) => {
+              const meal = mealOn(date, slot);
+              const cook = cookLabel(household, meal?.cookMemberId ?? null);
+              // Days with only dinner stay as they were; days with more say which meal each row is.
+              const label = slots.length > 1 ? `${formatDay(date)}, ${SLOT_NAMES[slot].toLowerCase()}` : formatDay(date);
+              return (
+                <li key={`${date}-${slot}`} className={`panel__row chore${date < today ? " meals__past" : ""}`}>
+                  <button className="chore__open" type="button" onClick={() => setScreen({ name: "plan", date, slot })}>
+                    <ItemIcon name={meal ? iconFor(meal.title, "food") : "food"} />
+                    <span className="chore__text">
+                      <span className="meals__day">{label}</span>
+                      <span className={meal ? "chore__title" : "meals__empty"}>{meal ? meal.title : "Nothing planned"}</span>
+                      {cook && <span className="chore__meta">{cook}</span>}
+                    </span>
+                  </button>
+                </li>
+              );
+            });
           })}
         </ul>
 
@@ -267,6 +291,36 @@ export function MealsView({ household }: MealsViewProps) {
           )}
         </section>
 
+        <section className="chores__group" aria-labelledby="meal-times-heading">
+          <h2 id="meal-times-heading" className="section-title">
+            Breakfast and lunch
+          </h2>
+          <p className="field-hint">Dinner is always on the plan. Pick the days you also plan breakfast or lunch.</p>
+          {(["breakfast", "lunch"] as const).map((slot) => (
+            <div key={slot} className="meal-times__row">
+              <span className="meal-times__label">{SLOT_NAMES[slot]}</span>
+              <div className="meal-times__days" role="group" aria-label={`${SLOT_NAMES[slot]} on`}>
+                {WEEKDAY_NAMES.map((weekdayName, index) => {
+                  const weekday = index + 1;
+                  const isOn = mealTimes[slot].includes(weekday);
+                  return (
+                    <button
+                      key={weekdayName}
+                      className={`meals__pick meal-times__day${isOn ? " meals__pick--chosen" : ""}`}
+                      type="button"
+                      aria-pressed={isOn}
+                      aria-label={weekdayName}
+                      onClick={() => toggleMealTime(slot, weekday)}
+                    >
+                      {weekdayName.slice(0, 2)}
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+          ))}
+        </section>
+
         {undoable && (
           <UndoBar
             key={undoable.id}
@@ -288,7 +342,9 @@ export function MealsView({ household }: MealsViewProps) {
 
 interface PlanDinnerScreenProps {
   household: Household;
-  date: string;
+  // "Dinner today", "Breakfast on Sun 8 Nov".
+  heading: string;
+  slot: MealSlot;
   meal?: PlannedMeal;
   recipes: Recipe[];
   onSave: (plan: MealPlan) => Promise<unknown>;
@@ -296,7 +352,8 @@ interface PlanDinnerScreenProps {
   onBack: () => void;
 }
 
-function PlanDinnerScreen({ household, date, meal, recipes, onSave, onClear, onBack }: PlanDinnerScreenProps) {
+function PlanDinnerScreen({ household, heading, slot, meal, recipes, onSave, onClear, onBack }: PlanDinnerScreenProps) {
+  const mealName = SLOT_NAMES[slot].toLowerCase();
   const fieldId = useId();
   const [title, setTitle] = useState(meal?.title ?? "");
   const [cookMemberId, setCookMemberId] = useState(meal?.cookMemberId ?? "");
@@ -320,7 +377,7 @@ function PlanDinnerScreen({ household, date, meal, recipes, onSave, onClear, onB
   function handleSubmit(event: FormEvent) {
     event.preventDefault();
     if (!title.trim()) {
-      setError("Say what's for dinner.");
+      setError(`Say what's for ${mealName}.`);
       return;
     }
     void finish(() => onSave({ title, recipeId: recipe?.id ?? null, cookMemberId: cookMemberId || null }));
@@ -331,10 +388,10 @@ function PlanDinnerScreen({ household, date, meal, recipes, onSave, onClear, onB
       <button className="back-link" type="button" onClick={onBack}>
         Cancel
       </button>
-      <h1 className="page-title">{dinnerOn(date)}</h1>
+      <h1 className="page-title">{heading}</h1>
       <form className="stacked-form" onSubmit={handleSubmit} noValidate>
         <label className="field-label" htmlFor={`${fieldId}-title`}>
-          What's for dinner?
+          What's for {mealName}?
         </label>
         <input
           id={`${fieldId}-title`}
@@ -373,7 +430,7 @@ function PlanDinnerScreen({ household, date, meal, recipes, onSave, onClear, onB
         </select>
 
         <button className="button button--block button--submit" type="submit" disabled={isBusy}>
-          Save dinner
+          Save {mealName}
         </button>
         {error && (
           <p className="form-error" role="alert">

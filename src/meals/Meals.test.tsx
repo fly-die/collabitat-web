@@ -34,7 +34,7 @@ async function addRecipe(title: string, ingredients: string) {
 }
 
 const dinners = () =>
-  within(screen.getByRole("list", { name: "Dinners" }))
+  within(screen.getByRole("list", { name: "Meals" }))
     .getAllByRole("listitem")
     .map((row) => row.textContent);
 

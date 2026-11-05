@@ -17,7 +17,7 @@ export function TonightDinner({ household, onOpenMeals }: TonightDinnerProps) {
   if (state.status !== "ready") {
     return null;
   }
-  const tonight = state.week.meals.find((meal) => meal.date === today);
+  const tonight = state.week.meals.find((meal) => meal.date === today && meal.slot === "dinner");
   const cook = tonight ? cookLabel(household, tonight.cookMemberId) : undefined;
 
   return (
