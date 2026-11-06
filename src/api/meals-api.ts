@@ -29,6 +29,14 @@ export interface PlannedMeal {
   cookMemberId: string | null;
 }
 
+// A dish the household had before: when last, and how often in the past year.
+export interface PastMeal {
+  title: string;
+  recipeId: string | null;
+  lastOn: string;
+  times: number;
+}
+
 export interface MealPlan {
   title: string;
   recipeId: string | null;
@@ -63,6 +71,7 @@ const week = (from: string) => `from=${safeDate(from)}`;
 
 export const mealsApi = {
   week: (from: string) => request<MealWeek>(`/household/meals?${week(from)}`),
+  history: (before: string) => request<{ pastMeals: PastMeal[] }>(`/household/meals/history?before=${safeDate(before)}`),
   plan: (from: string, date: string, plan: MealPlan, slot: MealSlot = "dinner") =>
     request<MealWeek>(`/household/meals/${safeDate(date)}?${week(from)}&slot=${slot}`, { method: "PUT", body: JSON.stringify(plan) }),
   clear: (from: string, date: string, slot: MealSlot = "dinner") =>

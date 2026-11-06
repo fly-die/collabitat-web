@@ -9,6 +9,7 @@ import { useUndoable } from "../components/useUndoable";
 import { formatDay, todayIsoDate } from "../money/money-format";
 import { describeIngredient, describeWeek, ingredientLine, mondayOf, weekDays, addDays, DAYS_IN_WEEK } from "./week";
 import { shoppingApi } from "../api/shopping-api";
+import { PastMeals } from "./PastMeals";
 import { ShoppingList } from "./ShoppingList";
 import { useMeals } from "./useMeals";
 
@@ -62,6 +63,7 @@ export function MealsView({ household }: MealsViewProps) {
   const { undoable, offerUndo, takeUndo, dismissUndo } = useUndoable();
   const [error, setError] = useState<string>();
   const [isCheckingOut, setIsCheckingOut] = useState(false);
+  const [isPickingDay, setIsPickingDay] = useState(false);
   const [shoppingChanges, setShoppingChanges] = useState(0);
   const shoppingChanged = () => setShoppingChanges((count) => count + 1);
   const backToWeek = () => setScreen({ name: "week" });
@@ -209,7 +211,7 @@ export function MealsView({ household }: MealsViewProps) {
     );
   }
 
-  const isBehindSheet = sheet !== undefined || isCheckingOut;
+  const isBehindSheet = sheet !== undefined || isCheckingOut || isPickingDay;
 
   return (
     <>
@@ -254,6 +256,15 @@ export function MealsView({ household }: MealsViewProps) {
             });
           })}
         </ul>
+
+        <PastMeals
+          today={today}
+          onPlan={(date, mealPlan) => plan(date, mealPlan)}
+          onClear={(date) => clear(date)}
+          onUndoable={offerUndo}
+          onSheetChange={setIsPickingDay}
+          week={state.week}
+        />
 
         <ShoppingList
           household={household}

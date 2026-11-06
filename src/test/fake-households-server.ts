@@ -452,6 +452,15 @@ export function createFakeHouseholdsServer({ pushPublicKey }: { pushPublicKey?: 
       return json(method === "POST" ? 201 : 200, shoppingListOf(household, from));
     }
 
+    if (segments[1] === "meals" && segments[2] === "history") {
+      const before = new URL(String(input)).searchParams.get("before") ?? "";
+      const byDish = new Map<string, { title: string; recipeId: string | null; lastOn: string; times: number }>();
+      for (const meal of [...(mealsByHouseholdId.get(household.id) ?? [])].filter((meal) => meal.date < before).sort((first, second) => first.date.localeCompare(second.date))) {
+        const earlier = byDish.get(meal.title.toLowerCase());
+        byDish.set(meal.title.toLowerCase(), { title: meal.title, recipeId: meal.recipeId, lastOn: meal.date, times: (earlier?.times ?? 0) + 1 });
+      }
+      return json(200, { pastMeals: [...byDish.values()].sort((first, second) => second.lastOn.localeCompare(first.lastOn)) });
+    }
     if (segments[1] === "meal-times" && method === "PUT") {
       mealTimesByHouseholdId.set(household.id, { breakfast: body.breakfast, lunch: body.lunch });
       return json(200, weekOf(household, new URL(String(input)).searchParams.get("from") ?? ""));

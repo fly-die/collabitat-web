@@ -1710,3 +1710,7 @@ select.text-input {
   padding: 0;
   font-size: var(--font-size-small);
 }
+
+.past-meals__more {
+  margin-top: var(--space-2);
+}
