@@ -97,6 +97,34 @@ describe("meals", () => {
     await waitFor(() => expect(dinners()).toHaveLength(7));
   });
 
+  it("plans a past meal again on a day I pick, and Undo clears that day again", async () => {
+    vi.useFakeTimers({ toFake: ["Date"] });
+    vi.setSystemTime(new Date("2026-11-05T10:00:00"));
+    await openMeals();
+    for (const [day, dish] of [["Mon 2 Nov", "Curry"], ["Yesterday", "Pasta"]]) {
+      fireEvent.click(screen.getByRole("button", { name: new RegExp(`^${day}`) }));
+      type("What's for dinner?", dish);
+      fireEvent.click(screen.getByRole("button", { name: "Save dinner" }));
+      await screen.findByRole("button", { name: new RegExp(`^${day}${dish}`) });
+    }
+
+    const pastMeals = await screen.findByRole("list", { name: "Past meals" });
+    await waitFor(() =>
+      expect(within(pastMeals).getAllByRole("listitem").map((row) => row.textContent)).toEqual([
+        "PastaLast on Yesterday, once",
+        "CurryLast on Mon 2 Nov, once",
+      ]),
+    );
+    fireEvent.click(within(pastMeals).getByRole("button", { name: /^Pasta/ }));
+    fireEvent.click(within(screen.getByRole("dialog", { name: "Plan Pasta again" })).getByRole("button", { name: "Tomorrow" }));
+
+    expect(await screen.findByRole("status")).toHaveTextContent("Pasta planned for Fri 6 Nov.");
+    expect(await screen.findByRole("button", { name: /^Fri 6 NovPasta/ })).toBeInTheDocument();
+    fireEvent.click(screen.getByRole("button", { name: "Undo" }));
+    expect(await screen.findByRole("button", { name: /^Fri 6 NovNothing planned/ })).toBeInTheDocument();
+    vi.useRealTimers();
+  });
+
   it("offers to plan tonight from Home, and says when I cook", async () => {
     await openMeals();
     fireEvent.click(screen.getByRole("button", { name: "Home" }));
