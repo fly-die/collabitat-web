@@ -31,10 +31,30 @@ export function describeWeek(monday: string) {
 }
 
 const quantityFormat = new Intl.NumberFormat("de-CH", { maximumFractionDigits: 2 });
+const AMOUNT_DECIMALS = 2;
+
+// Units are stored in lower case; they read the way people write them, for one or for more.
+const UNIT_LABELS: Record<string, [string, string]> = {
+  dose: ["Dose", "Dosen"], dosen: ["Dose", "Dosen"], zehe: ["Zehe", "Zehen"], zehen: ["Zehe", "Zehen"],
+  pack: ["Pack", "Packs"], packung: ["Packung", "Packungen"], prise: ["Prise", "Prisen"], bund: ["Bund", "Bund"],
+  tl: ["TL", "TL"], el: ["EL", "EL"], stk: ["Stk.", "Stk."], stück: ["Stück", "Stück"],
+};
+
+function unitLabel(unit: string | null, quantity: number | null) {
+  const labels = unit ? UNIT_LABELS[unit.toLocaleLowerCase("de-CH")] : undefined;
+  return labels ? labels[quantity === 1 ? 0 : 1] : (unit ?? "");
+}
 
 export function describeIngredient({ quantity, unit, name }: Ingredient) {
-  return [quantity === null ? "" : quantityFormat.format(quantity), unit ?? "", name].filter(Boolean).join(" ");
+  return [quantity === null ? "" : quantityFormat.format(quantity), unitLabel(unit, quantity), name].filter(Boolean).join(" ");
 }
 
 // Back to the lines it was typed as, so undoing a deleted recipe saves the same one again.
 export const ingredientLine = describeIngredient;
+
+// A recipe's amounts for another number of people; amounts without a number stay as they are.
+export function scaleIngredients(ingredients: Ingredient[], from: number, to: number) {
+  return ingredients.map((ingredient) =>
+    ingredient.quantity === null ? ingredient : { ...ingredient, quantity: Number(((ingredient.quantity * to) / from).toFixed(AMOUNT_DECIMALS)) },
+  );
+}

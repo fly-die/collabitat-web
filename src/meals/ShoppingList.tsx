@@ -230,7 +230,7 @@ export function ShoppingList({ household, monday, onUndoable, onSheetChange, cha
                   <span className="expense__text">
                     <span className="expense__description">{describeIngredient(item)}</span>
                     <span className="expense__meta">
-                      <span>{item.extraId ? "Added by hand" : `For ${item.forDinners.join(", ")}`}</span>
+                      <span>{item.forDinners.length > 0 ? `For ${item.forDinners.join(", ")}` : "Added by hand"}</span>
                     </span>
                   </span>
                 </label>
