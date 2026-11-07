@@ -34,6 +34,14 @@ export type CheckedOut = ShoppingList & { expenseId: string };
 const ISO_DATE_PATTERN = /^\d{4}-\d{2}-\d{2}$/;
 const ITEM_NOT_FOUND_CODE = "ITEM_NOT_FOUND";
 
+// Only a plain whole number reaches the URL.
+const wholeNumber = (value: number) => {
+  if (!Number.isInteger(value) || value < 1) {
+    throw new Error(`Not a number of people: ${value}`);
+  }
+  return String(value);
+};
+
 const week = (from: string) => {
   if (!ISO_DATE_PATTERN.test(from)) {
     throw new Error(`Not a date: ${from}`);
@@ -50,10 +58,10 @@ export const shoppingApi = {
       `/household/shopping-list/items/${safeId(itemId, ITEM_NOT_FOUND_CODE, "That item is already gone.")}?${week(from)}`,
       { method: "DELETE" },
     ),
-  // A recipe's ingredients as items added by hand; the ids are for taking them off again.
-  addRecipe: (from: string, recipeId: string) =>
+  // A recipe's ingredients for that many people, as items added by hand; the ids are for taking them off again.
+  addRecipe: (from: string, recipeId: string, servings: number) =>
     request<ShoppingList & { addedItemIds: string[] }>(
-      `/household/shopping-list/recipes/${safeId(recipeId, ITEM_NOT_FOUND_CODE, "That recipe is already gone.")}?${week(from)}`,
+      `/household/shopping-list/recipes/${safeId(recipeId, ITEM_NOT_FOUND_CODE, "That recipe is already gone.")}?${week(from)}&servings=${wholeNumber(servings)}`,
       { method: "POST" },
     ),
   check: (from: string, key: string, checked: boolean) =>

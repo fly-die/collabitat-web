@@ -1,15 +1,16 @@
 import { useId, useState, type FormEvent, type ReactNode } from "react";
 import type { ApiError } from "../api/client";
 import type { Household } from "../api/households-api";
-import type { MealPlan, MealSlot, NewRecipe, PlannedMeal, Recipe } from "../api/meals-api";
+import { mealsApi, type MealPlan, type MealSlot, type NewRecipe, type PlannedMeal, type Recipe } from "../api/meals-api";
 import { ItemIcon, iconFor } from "../components/item-icons";
 import { Sheet } from "../components/Sheet";
 import { UndoBar } from "../components/UndoBar";
 import { useUndoable } from "../components/useUndoable";
 import { formatDay, todayIsoDate } from "../money/money-format";
-import { describeIngredient, describeWeek, ingredientLine, mondayOf, weekDays, addDays, DAYS_IN_WEEK } from "./week";
+import { describeIngredient, describeWeek, ingredientLine, mondayOf, scaleIngredients, weekDays, addDays, DAYS_IN_WEEK } from "./week";
 import { shoppingApi } from "../api/shopping-api";
 import { PastMeals } from "./PastMeals";
+import { ServingsStepper } from "./ServingsStepper";
 import { ShoppingList } from "./ShoppingList";
 import { useMeals } from "./useMeals";
 
@@ -106,8 +107,8 @@ export function MealsView({ household }: MealsViewProps) {
 
   async function clearDay(meal: PlannedMeal) {
     await clear(meal.date, meal.slot);
-    const { title, recipeId, cookMemberId } = meal;
-    offerUndo({ message: `${formatDay(meal.date)} cleared.`, undo: () => plan(meal.date, { title, recipeId, cookMemberId }, meal.slot) });
+    const { title, recipeId, cookMemberId, servings } = meal;
+    offerUndo({ message: `${formatDay(meal.date)} cleared.`, undo: () => plan(meal.date, { title, recipeId, cookMemberId, servings }, meal.slot) });
   }
 
   async function deleteRecipe(recipe: Recipe) {
@@ -115,10 +116,10 @@ export function MealsView({ household }: MealsViewProps) {
     offerUndo({ message: `${recipe.title} deleted.`, undo: () => addRecipe(asNewRecipe(recipe)) });
   }
 
-  async function addToShoppingList(recipe: Recipe) {
+  async function addToShoppingList(recipe: Recipe, servings: number) {
     backToWeek();
     try {
-      const { addedItemIds } = await shoppingApi.addRecipe(monday, recipe.id);
+      const { addedItemIds } = await shoppingApi.addRecipe(monday, recipe.id, servings);
       shoppingChanged();
       offerUndo({
         message: `${recipe.title} added to the shopping list.`,
@@ -171,42 +172,18 @@ export function MealsView({ household }: MealsViewProps) {
     const { recipe } = screen;
     sheet = (
       <Sheet label={recipe.title} onClose={backToWeek}>
-        <div className="screen">
-          <button className="back-link" type="button" onClick={backToWeek}>
-            Close
-          </button>
-          <h1 className="page-title">{recipe.title}</h1>
-          <p className="chore-detail">Serves {recipe.servings}.</p>
-          {recipe.ingredients.length > 0 ? (
-            <ul className="recipe__ingredients">
-              {recipe.ingredients.map((ingredient, index) => (
-                <li key={index}>{describeIngredient(ingredient)}</li>
-              ))}
-            </ul>
-          ) : (
-            <p className="chore-detail">No ingredients yet.</p>
-          )}
-          {recipe.ingredients.length > 0 && (
-            <button className="button button--block" type="button" onClick={() => void addToShoppingList(recipe)}>
-              Add to shopping list
-            </button>
-          )}
-          <button className="button button--block button--outline recipe__edit" type="button" onClick={() => setScreen({ name: "edit-recipe", recipe })}>
-            Edit recipe
-          </button>
-          <button
-            className="button button--quiet expense-screen__delete"
-            type="button"
-            onClick={() =>
-              run(async () => {
-                await deleteRecipe(recipe);
-                backToWeek();
-              })
-            }
-          >
-            Delete recipe
-          </button>
-        </div>
+        <RecipeScreen
+          recipe={recipe}
+          onAddToShoppingList={(servings) => void addToShoppingList(recipe, servings)}
+          onEdit={() => setScreen({ name: "edit-recipe", recipe })}
+          onDelete={() =>
+            run(async () => {
+              await deleteRecipe(recipe);
+              backToWeek();
+            })
+          }
+          onBack={backToWeek}
+        />
       </Sheet>
     );
   }
@@ -239,6 +216,8 @@ export function MealsView({ household }: MealsViewProps) {
             return slots.map((slot) => {
               const meal = mealOn(date, slot);
               const cook = cookLabel(household, meal?.cookMemberId ?? null);
+              const forHowMany = meal?.servings ? `for ${meal.servings}` : undefined;
+              const meta = [cook, forHowMany].filter(Boolean).join(", ");
               // Days with only dinner stay as they were; days with more say which meal each row is.
               const label = slots.length > 1 ? `${formatDay(date)}, ${SLOT_NAMES[slot].toLowerCase()}` : formatDay(date);
               return (
@@ -248,7 +227,7 @@ export function MealsView({ household }: MealsViewProps) {
                     <span className="chore__text">
                       <span className="meals__day">{label}</span>
                       <span className={meal ? "chore__title" : "meals__empty"}>{meal ? meal.title : "Nothing planned"}</span>
-                      {cook && <span className="chore__meta">{cook}</span>}
+                      {meta && <span className="chore__meta">{meta.charAt(0).toUpperCase() + meta.slice(1)}</span>}
                     </span>
                   </button>
                 </li>
@@ -372,6 +351,9 @@ function PlanDinnerScreen({ household, heading, slot, meal, recipes, onSave, onC
   const [isBusy, setIsBusy] = useState(false);
   // Typing a saved recipe's name, or tapping it, links the dinner to that recipe.
   const recipe = recipes.find((candidate) => candidate.title.toLocaleLowerCase() === title.trim().toLocaleLowerCase());
+  // Until someone changes it, as many eat as the recipe serves.
+  const [chosenServings, setChosenServings] = useState(meal?.recipeId ? meal.servings : null);
+  const servings = chosenServings ?? recipe?.servings ?? 0;
 
   async function finish(action: () => Promise<unknown>) {
     setIsBusy(true);
@@ -391,7 +373,7 @@ function PlanDinnerScreen({ household, heading, slot, meal, recipes, onSave, onC
       setError(`Say what's for ${mealName}.`);
       return;
     }
-    void finish(() => onSave({ title, recipeId: recipe?.id ?? null, cookMemberId: cookMemberId || null }));
+    void finish(() => onSave({ title, recipeId: recipe?.id ?? null, cookMemberId: cookMemberId || null, servings: recipe ? servings : null }));
   }
 
   return (
@@ -428,6 +410,14 @@ function PlanDinnerScreen({ household, heading, slot, meal, recipes, onSave, onC
           </div>
         )}
 
+        {recipe && (
+          <>
+            <p className="field-label">How many eat?</p>
+            <ServingsStepper label="How many eat?" servings={servings} onChange={setChosenServings} />
+            <p className="field-hint">The shopping list gets what {servings === 1 ? "one person needs" : `${servings} people need`}.</p>
+          </>
+        )}
+
         <label className="field-label" htmlFor={`${fieldId}-cook`}>
           Who cooks?
         </label>
@@ -458,6 +448,51 @@ function PlanDinnerScreen({ household, heading, slot, meal, recipes, onSave, onC
   );
 }
 
+interface RecipeScreenProps {
+  recipe: Recipe;
+  onAddToShoppingList: (servings: number) => void;
+  onEdit: () => void;
+  onDelete: () => void;
+  onBack: () => void;
+}
+
+// A recipe for as many people as you like: the amounts follow, and so does what goes on the shopping list.
+function RecipeScreen({ recipe, onAddToShoppingList, onEdit, onDelete, onBack }: RecipeScreenProps) {
+  const [servings, setServings] = useState(recipe.servings);
+  const ingredients = scaleIngredients(recipe.ingredients, recipe.servings, servings);
+
+  return (
+    <div className="screen">
+      <button className="back-link" type="button" onClick={onBack}>
+        Close
+      </button>
+      <h1 className="page-title">{recipe.title}</h1>
+      <ServingsStepper label="Servings" servings={servings} onChange={setServings} />
+      {servings !== recipe.servings && <p className="field-hint">The recipe is for {recipe.servings}.</p>}
+      {ingredients.length > 0 ? (
+        <ul className="recipe__ingredients">
+          {ingredients.map((ingredient, index) => (
+            <li key={index}>{describeIngredient(ingredient)}</li>
+          ))}
+        </ul>
+      ) : (
+        <p className="chore-detail">No ingredients yet.</p>
+      )}
+      {ingredients.length > 0 && (
+        <button className="button button--block" type="button" onClick={() => onAddToShoppingList(servings)}>
+          Add to shopping list
+        </button>
+      )}
+      <button className="button button--block button--outline recipe__edit" type="button" onClick={onEdit}>
+        Edit recipe
+      </button>
+      <button className="button button--quiet expense-screen__delete" type="button" onClick={onDelete}>
+        Delete recipe
+      </button>
+    </div>
+  );
+}
+
 interface RecipeFormScreenProps {
   // Set when editing; the form starts with what it has.
   recipe?: Recipe;
@@ -472,6 +507,31 @@ function RecipeFormScreen({ recipe, onSave, onBack }: RecipeFormScreenProps) {
   const [ingredients, setIngredients] = useState(recipe ? recipe.ingredients.map(ingredientLine).join("\n") : "");
   const [error, setError] = useState<string>();
   const [isBusy, setIsBusy] = useState(false);
+  const [link, setLink] = useState("");
+  const [importError, setImportError] = useState<string>();
+  const [isImporting, setIsImporting] = useState(false);
+
+  // Fills the form from a recipe page; the person checks it and saves as usual.
+  async function handleImport(event: FormEvent) {
+    event.preventDefault();
+    if (!link.trim()) {
+      setImportError("Paste the link to a recipe page.");
+      return;
+    }
+    setIsImporting(true);
+    setImportError(undefined);
+    try {
+      const imported = await mealsApi.importRecipe(link.trim());
+      setTitle(imported.title);
+      setServings(String(imported.servings));
+      setIngredients(imported.ingredientLines.join("\n"));
+      setLink("");
+    } catch (importFailure) {
+      setImportError((importFailure as ApiError).message);
+    } finally {
+      setIsImporting(false);
+    }
+  }
 
   async function handleSubmit(event: FormEvent) {
     event.preventDefault();
@@ -500,6 +560,35 @@ function RecipeFormScreen({ recipe, onSave, onBack }: RecipeFormScreenProps) {
         Cancel
       </button>
       <h1 className="page-title">{recipe ? "Edit recipe" : "Add a recipe"}</h1>
+      {!recipe && (
+        <form className="recipe__import" onSubmit={handleImport} noValidate>
+          <label className="field-label" htmlFor={`${fieldId}-link`}>
+            From a recipe website
+          </label>
+          <div className="recipe__import-row">
+            <input
+              id={`${fieldId}-link`}
+              className="text-input"
+              type="url"
+              inputMode="url"
+              value={link}
+              placeholder="https://"
+              autoComplete="off"
+              onChange={(event) => setLink(event.target.value)}
+            />
+            <button className="button button--outline" type="submit" disabled={isImporting}>
+              {isImporting ? "Reading…" : "Fill in"}
+            </button>
+          </div>
+          {importError ? (
+            <p className="form-error" role="alert">
+              {importError}
+            </p>
+          ) : (
+            <p className="field-hint">Paste a link and check what comes in, or type the recipe below.</p>
+          )}
+        </form>
+      )}
       <form className="stacked-form" onSubmit={handleSubmit} noValidate>
         <label className="field-label" htmlFor={`${fieldId}-title`}>
           Name

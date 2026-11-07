@@ -27,6 +27,8 @@ export interface PlannedMeal {
   title: string;
   recipeId: string | null;
   cookMemberId: string | null;
+  // How many eat, for a meal from a recipe; null means the recipe's own servings.
+  servings: number | null;
 }
 
 // A dish the household had before: when last, and how often in the past year.
@@ -41,6 +43,7 @@ export interface MealPlan {
   title: string;
   recipeId: string | null;
   cookMemberId: string | null;
+  servings?: number | null;
 }
 
 export interface NewRecipe {
@@ -85,6 +88,8 @@ export const mealsApi = {
       `/household/recipes/${safeId(recipeId, RECIPE_NOT_FOUND_CODE, "That recipe is already gone.")}?${week(from)}`,
       { method: "PUT", body: JSON.stringify(recipe) },
     ),
+  // Reads a recipe from a web page; nothing is saved until the person saves it.
+  importRecipe: (link: string) => request<NewRecipe>("/household/recipe-import", { method: "POST", body: JSON.stringify({ link }) }),
   removeRecipe: (from: string, recipeId: string) =>
     request<MealWeek>(
       `/household/recipes/${safeId(recipeId, RECIPE_NOT_FOUND_CODE, "That recipe is already gone.")}?${week(from)}`,
