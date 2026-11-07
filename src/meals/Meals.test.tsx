@@ -340,4 +340,59 @@ describe("meals", () => {
     expect(screen.queryByRole("button", { name: /^Today/ })).not.toBeInTheDocument();
     expect(dinners()[0]).toContain(new Date(`${nextMonday}T00:00:00Z`).getUTCDate().toString());
   });
+  it("fills a new recipe from a link to check before saving, and says when a page has none", async () => {
+    await openMeals();
+    fireEvent.click(screen.getByRole("button", { name: "Add a recipe" }));
+
+    type("From a recipe website", "https://example.com/news");
+    fireEvent.click(screen.getByRole("button", { name: "Fill in" }));
+    expect(await screen.findByRole("alert")).toHaveTextContent("That page has no recipe we can read. Type it in instead.");
+
+    type("From a recipe website", "https://example.com/curry");
+    fireEvent.click(screen.getByRole("button", { name: "Fill in" }));
+    await waitFor(() => expect(screen.getByLabelText("Name")).toHaveValue("Green curry"));
+    expect(screen.getByLabelText("Servings")).toHaveValue("2");
+    expect(screen.getByLabelText("Ingredients, one per line")).toHaveValue("400 ml Kokosmilch\n200 g Reis");
+
+    fireEvent.click(screen.getByRole("button", { name: "Save recipe" }));
+    expect(await screen.findByRole("button", { name: /^Green curry.*Serves 2, 2 ingredients$/ })).toBeInTheDocument();
+  });
+
+  it("scales a recipe to more people and puts that much on the shopping list, saying for which recipe", async () => {
+    await openMeals();
+    await addRecipe("Pasta", "500 g pasta\n2 dosen Tomaten");
+    fireEvent.click(screen.getByRole("button", { name: /^Pasta.*Serves 4/ }));
+    const sheet = screen.getByRole("dialog", { name: "Pasta" });
+    expect(within(sheet).getByRole("list")).toHaveTextContent("500 g pasta2 Dosen Tomaten");
+
+    fireEvent.click(within(sheet).getByRole("button", { name: "More people" }));
+    fireEvent.click(within(sheet).getByRole("button", { name: "More people" }));
+
+    expect(within(sheet).getByRole("group", { name: "Servings" })).toHaveTextContent("6 people");
+    expect(within(sheet).getByText("The recipe is for 4.")).toBeInTheDocument();
+    expect(within(sheet).getByRole("list")).toHaveTextContent("750 g pasta3 Dosen Tomaten");
+
+    fireEvent.click(within(sheet).getByRole("button", { name: "Add to shopping list" }));
+    expect(await screen.findByRole("list", { name: "Pantry" })).toHaveTextContent("750 g pastaFor Pasta");
+  });
+
+  it("plans a meal for how many eat, and the shopping list follows", async () => {
+    await openMeals();
+    await addRecipe("Pasta", "500 g pasta");
+    fireEvent.click(screen.getByRole("button", { name: /^Today/ }));
+    const dialog = screen.getByRole("dialog", { name: "Dinner today" });
+    expect(within(dialog).queryByRole("group", { name: "How many eat?" })).not.toBeInTheDocument();
+
+    fireEvent.click(within(dialog).getByRole("button", { name: "Pasta" }));
+    expect(within(dialog).getByRole("group", { name: "How many eat?" })).toHaveTextContent("4 people");
+    fireEvent.click(within(dialog).getByRole("button", { name: "More people" }));
+    fireEvent.click(within(dialog).getByRole("button", { name: "More people" }));
+    fireEvent.click(within(dialog).getByRole("button", { name: "Save dinner" }));
+
+    expect(await screen.findByRole("button", { name: /^TodayPastaFor 6$/ })).toBeInTheDocument();
+    // Without a live connection in tests, the list reloads when the week is opened again.
+    fireEvent.click(screen.getByRole("radio", { name: "Next week" }));
+    fireEvent.click(await screen.findByRole("radio", { name: "This week" }));
+    expect(await screen.findByRole("list", { name: "Pantry" })).toHaveTextContent("750 g pastaFor Pasta");
+  });
 });
