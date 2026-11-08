@@ -268,6 +268,7 @@ describe("money", () => {
     await addExpense("Groceries", "30");
 
     fireEvent.click(screen.getByRole("button", { name: "Home" }));
+    fireEvent.click(await screen.findByRole("button", { name: "Settings" }));
     fireEvent.click(await screen.findByRole("button", { name: "Remove Lea" }));
 
     expect(await screen.findByRole("alert")).toHaveTextContent(

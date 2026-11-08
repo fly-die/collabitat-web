@@ -1,11 +1,11 @@
 import { useState, type ReactNode } from "react";
 import { NewAccountForm } from "../accounts/NewAccountForm";
-import { UndoBar } from "../components/UndoBar";
-import type { ApiError } from "../api/client";
-import type { Credentials, Household, Member } from "../api/households-api";
-import { Doorbell, DoorbellPlate } from "./Doorbell";
+import type { Credentials, Household } from "../api/households-api";
+import { FlatmatesSection } from "./FlatmatesSection";
 import { InviteShareFeedback, useInviteShare } from "./InviteShare";
-import { AddFlatmateRows } from "./AddFlatmateRows";
+
+// From two people on, the flat is set up: who lives here moves to Settings.
+const SET_UP_FROM_MEMBERS = 2;
 
 
 interface HouseholdViewProps {
@@ -41,27 +41,10 @@ export function HouseholdView({
   summary,
   footer,
 }: HouseholdViewProps) {
-  const [removedMember, setRemovedMember] = useState<Member>();
-  const [removeError, setRemoveError] = useState<string>();
   const invite = useInviteShare(household.name, household.inviteCode);
   const openStep = nextStepTitle(household);
-
-  async function removeMember(member: Member) {
-    setRemoveError(undefined);
-    try {
-      await onRemoveMember(member.id);
-      setRemovedMember(member);
-    } catch (error) {
-      setRemoveError((error as ApiError).message);
-    }
-  }
-
-  async function undoRemoval() {
-    if (removedMember) {
-      setRemovedMember(undefined);
-      await onAddMember(removedMember.name);
-    }
-  }
+  // Decided when Home opens, so the list doesn't vanish while someone is still adding flatmates.
+  const [isSettingUp] = useState(() => household.members.length < SET_UP_FROM_MEMBERS);
 
   return (
     <div className="screen household">
@@ -80,47 +63,7 @@ export function HouseholdView({
         <h1 className="page-title page-title--large">{household.name}</h1>
         {summary}
 
-        <section aria-labelledby="members-heading">
-          <h2 id="members-heading" className="section-title">
-            Flatmates
-          </h2>
-          <Doorbell label="Flatmates">
-            {household.members.map((member) => {
-              const isMe = member.id === household.currentMemberId;
-              return (
-                <DoorbellPlate
-                  key={member.id}
-                  hasJoined={member.hasJoined}
-                  action={
-                    isMe ? (
-                      <span className="you-tag">You</span>
-                    ) : (
-                      <button
-                        className="button button--quiet"
-                        type="button"
-                        aria-label={`Remove ${member.name}`}
-                        onClick={() => removeMember(member)}
-                      >
-                        Remove
-                      </button>
-                    )
-                  }
-                >
-                  {member.name}
-                  {!member.hasJoined && (
-                    <span className="doorbell__note">Not joined yet</span>
-                  )}
-                </DoorbellPlate>
-              );
-            })}
-            <AddFlatmateRows onAdd={onAddMember} />
-          </Doorbell>
-          {removeError && (
-            <p className="form-error" role="alert">
-              {removeError}
-            </p>
-          )}
-        </section>
+        {isSettingUp && <FlatmatesSection household={household} onAddMember={onAddMember} onRemoveMember={onRemoveMember} />}
       </div>
 
       <div className="household__aside">
@@ -172,6 +115,7 @@ export function HouseholdView({
             </ol>
           </section>
         ) : (
+          isSettingUp && (
           <div className="later-invite">
             <button
               className="button button--outline"
@@ -182,18 +126,11 @@ export function HouseholdView({
             </button>
             <InviteShareFeedback status={invite.status} link={invite.link} />
           </div>
+          )
         )}
         {footer}
       </div>
 
-      {removedMember && (
-        <UndoBar
-          key={removedMember.id}
-          message={`${removedMember.name} removed.`}
-          onUndo={undoRemoval}
-          onExpire={() => setRemovedMember(undefined)}
-        />
-      )}
     </div>
   );
 }

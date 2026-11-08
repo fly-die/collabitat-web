@@ -1,6 +1,8 @@
 import { useId, useState, type FormEvent } from "react";
 import type { ApiError } from "../api/client";
 import type { Household } from "../api/households-api";
+import { FlatmatesSection } from "../households/FlatmatesSection";
+import { InviteShareFeedback, useInviteShare } from "../households/InviteShare";
 import { useNotifications, type NotificationStatus } from "../notifications/useNotifications";
 import type { Theme, ThemeChoice } from "./useTheme";
 
@@ -14,6 +16,8 @@ interface SettingsScreenProps {
   household: Household;
   theme: Theme;
   onRename: (name: string) => Promise<unknown>;
+  onAddMember: (name: string) => Promise<void>;
+  onRemoveMember: (memberId: string) => Promise<void>;
   onBack: () => void;
   onLogOut: () => void;
 }
@@ -29,12 +33,13 @@ const EXPLANATIONS: Partial<Record<NotificationStatus, string>> = {
   blocked: "Notifications are blocked for Collabitat. Allow them in your browser's site settings, then come back here.",
 };
 
-export function SettingsScreen({ household, theme, onRename, onBack, onLogOut }: SettingsScreenProps) {
+export function SettingsScreen({ household, theme, onRename, onAddMember, onRemoveMember, onBack, onLogOut }: SettingsScreenProps) {
   const { status, isBusy, error, turnOn, turnOff, checkAgain } = useNotifications();
   const me = household.members.find((member) => member.id === household.currentMemberId);
   const fieldId = useId();
   const [name, setName] = useState(me?.name ?? "");
   const [nameMessage, setNameMessage] = useState<{ text: string; isError: boolean }>();
+  const invite = useInviteShare(household.name, household.inviteCode);
 
   async function saveName(event: FormEvent) {
     event.preventDefault();
@@ -90,6 +95,14 @@ export function SettingsScreen({ household, theme, onRename, onBack, onLogOut }:
           </p>
         )}
       </section>
+
+      <FlatmatesSection household={household} onAddMember={onAddMember} onRemoveMember={onRemoveMember} />
+      <div className="later-invite">
+        <button className="button button--outline" type="button" onClick={invite.share}>
+          Share invite link
+        </button>
+        <InviteShareFeedback status={invite.status} link={invite.link} />
+      </div>
 
       <section aria-labelledby="appearance-heading">
         <h2 id="appearance-heading" className="section-title">

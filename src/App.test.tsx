@@ -183,6 +183,11 @@ describe("household", () => {
 
     await screen.findByRole("heading", { level: 1, name: "Langstrasse 12" });
     expect(screen.queryByRole("heading", { name: "Getting started" })).not.toBeInTheDocument();
+    // With two of us, who lives here and the invite link are in Settings, not on Home.
+    expect(screen.queryByRole("list", { name: "Flatmates" })).not.toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "Share invite link" })).not.toBeInTheDocument();
+    fireEvent.click(screen.getByRole("button", { name: "Settings" }));
+    expect(screen.getByRole("list", { name: "Flatmates" })).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "Share invite link" })).toBeInTheDocument();
   });
 
@@ -205,6 +210,7 @@ describe("household", () => {
       enterNewAccount("lea@example.com");
 
       expect(await screen.findByRole("heading", { level: 1, name: "Langstrasse 12" })).toBeInTheDocument();
+      fireEvent.click(screen.getByRole("button", { name: "Settings" }));
       expect(flatmateNames()).toContain("LeaYou");
       expect(window.location.hash).toBe("");
     });
@@ -219,6 +225,7 @@ describe("household", () => {
       enterNewAccount("noah@example.com");
 
       await screen.findByRole("heading", { level: 1, name: "Langstrasse 12" });
+      fireEvent.click(screen.getByRole("button", { name: "Settings" }));
       expect(flatmateNames()).toContain("NoahYou");
     });
 

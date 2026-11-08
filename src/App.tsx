@@ -126,6 +126,8 @@ export function App() {
           household={state.household}
           theme={theme}
           onRename={renameMe}
+          onAddMember={addMember}
+          onRemoveMember={removeMember}
           onBack={() => setIsSettingsOpen(false)}
           onLogOut={logOutToWelcome}
         />
