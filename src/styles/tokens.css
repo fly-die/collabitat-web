@@ -40,19 +40,19 @@
   --radius-panel: 0.875rem;
 }
 
-/* Dark: a calm, slightly green-tinted dark rather than an inverted light theme. Surfaces sit a step
-   above the canvas, text is soft white, and accent and owe colours are lifted to keep their contrast. */
+/* Dark: neutral graphite rather than an inverted light theme. Surfaces are plain greys a step above the
+   canvas, so the green only marks what's actionable; accent and owe colours are lifted to keep their contrast. */
 :root[data-theme="dark"] {
-  --color-ink: #e6ede9;
-  --color-ink-muted: #a3b2aa;
-  --color-surface: #18211d;
-  --color-canvas: #101613;
+  --color-ink: #ecedee;
+  --color-ink-muted: #a1a4aa;
+  --color-surface: #1b1c1f;
+  --color-canvas: #111214;
   --color-accent: #6cc2a8;
   --color-owe: #e8956a;
-  --color-line: #2c3832;
-  --color-divider: #222c27;
-  --color-done: #1e2a25;
-  --color-accent-tint: #1d3029;
+  --color-line: #2e3035;
+  --color-divider: #26272b;
+  --color-done: #232428;
+  --color-accent-tint: #1e2e29;
   --color-backdrop: rgb(0 0 0 / 60%);
   --color-shadow: rgb(0 0 0 / 50%);
   color-scheme: dark;
