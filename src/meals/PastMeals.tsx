@@ -122,7 +122,6 @@ export function PastMeals({ today, onPlan, onClear, onUndoable, onSheetChange, w
               Cancel
             </button>
             <h1 className="page-title">Plan {picking.title} again</h1>
-            <p className="field-hint">Pick the day you want it for dinner.</p>
             <div className="meals__picks" role="group" aria-label="Day">
               {Array.from({ length: DAYS_TO_PICK }, (_, offset) => addDays(today, offset)).map((date) => (
                 <button key={date} className="meals__pick" type="button" onClick={() => void planAgain(picking, date)}>

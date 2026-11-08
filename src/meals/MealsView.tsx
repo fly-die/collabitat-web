@@ -19,7 +19,9 @@ const WHOLE_NUMBER_PATTERN = /^\d{1,2}$/;
 
 type MealsScreen =
   | { name: "week" }
-  | { name: "plan"; date: string; slot: MealSlot }
+  | { name: "day"; date: string }
+  // Without a meal yet, the person picks which meal it is; isNew offers that choice.
+  | { name: "plan"; date: string; slot: MealSlot; isNew: boolean }
   | { name: "add-recipe" }
   | { name: "recipe"; recipe: Recipe }
   | { name: "edit-recipe"; recipe: Recipe };
@@ -31,11 +33,7 @@ interface MealsViewProps {
 }
 
 const SLOT_NAMES: Record<MealSlot, string> = { breakfast: "Breakfast", lunch: "Lunch", dinner: "Dinner" };
-const WEEKDAY_NAMES = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"];
-const SUNDAY = 7;
-
-// 1 (Monday) to 7 (Sunday), like the meal times.
-const weekdayOf = (date: string) => new Date(`${date}T00:00:00Z`).getUTCDay() || SUNDAY;
+const SLOTS: MealSlot[] = ["breakfast", "lunch", "dinner"];
 
 // "Dinner today", "Breakfast yesterday", or "Lunch on Wed 4 Nov".
 function mealNameOn(date: string, slot: MealSlot) {
@@ -59,7 +57,7 @@ export function MealsView({ household }: MealsViewProps) {
   const today = todayIsoDate();
   const thisMonday = mondayOf(today);
   const [monday, setMonday] = useState(thisMonday);
-  const { state, retry, plan, clear, addRecipe, updateRecipe, removeRecipe, setMealTimes } = useMeals(monday);
+  const { state, retry, plan, clear, addRecipe, updateRecipe, removeRecipe } = useMeals(monday);
   const [screen, setScreen] = useState<MealsScreen>({ name: "week" });
   const { undoable, offerUndo, takeUndo, dismissUndo } = useUndoable();
   const [error, setError] = useState<string>();
@@ -92,18 +90,15 @@ export function MealsView({ household }: MealsViewProps) {
     );
   }
 
-  const { meals, recipes, mealTimes } = state.week;
+  const { meals, recipes } = state.week;
   const mealOn = (date: string, slot: MealSlot) => meals.find((meal) => meal.date === date && meal.slot === slot);
-  const slotsOn = (date: string): MealSlot[] => [
-    ...(mealTimes.breakfast.includes(weekdayOf(date)) ? (["breakfast"] as const) : []),
-    ...(mealTimes.lunch.includes(weekdayOf(date)) ? (["lunch"] as const) : []),
-    "dinner",
-  ];
-  const toggleMealTime = (slot: "breakfast" | "lunch", weekday: number) => {
-    const days = mealTimes[slot];
-    const changed = days.includes(weekday) ? days.filter((day) => day !== weekday) : [...days, weekday];
-    void run(() => setMealTimes({ ...mealTimes, [slot]: changed }));
-  };
+  const mealsOn = (date: string) => SLOTS.flatMap((slot) => mealOn(date, slot) ?? []);
+  const freeSlotsOn = (date: string) => SLOTS.filter((slot) => !mealOn(date, slot));
+  // Dinner first, as most days only have that.
+  const firstFreeSlot = (date: string) => (mealOn(date, "dinner") ? freeSlotsOn(date)[0] : "dinner");
+  const addMeal = (date: string) => setScreen({ name: "plan", date, slot: firstFreeSlot(date), isNew: true });
+  // An empty day goes straight to planning; a planned one shows what's on it.
+  const openDay = (date: string) => (mealsOn(date).length === 0 ? addMeal(date) : setScreen({ name: "day", date }));
 
   async function clearDay(meal: PlannedMeal) {
     await clear(meal.date, meal.slot);
@@ -139,17 +134,50 @@ export function MealsView({ household }: MealsViewProps) {
   }
 
   let sheet: ReactNode;
-  if (screen.name === "plan") {
-    const meal = mealOn(screen.date, screen.slot);
+  if (screen.name === "day") {
+    const { date } = screen;
     sheet = (
-      <Sheet label={mealNameOn(screen.date, screen.slot)} onClose={backToWeek}>
+      <Sheet label={formatDay(date)} onClose={backToWeek}>
+        <div className="screen">
+          <button className="back-link" type="button" onClick={backToWeek}>
+            Close
+          </button>
+          <h1 className="page-title">{formatDay(date)}</h1>
+          <ul className="panel" aria-label={`Meals on ${formatDay(date)}`}>
+            {mealsOn(date).map((meal) => (
+              <li key={meal.slot} className="panel__row chore">
+                <button className="chore__open" type="button" onClick={() => setScreen({ name: "plan", date, slot: meal.slot, isNew: false })}>
+                  <ItemIcon name={iconFor(meal.title, "food")} />
+                  <span className="chore__text">
+                    <span className="meals__day">{SLOT_NAMES[meal.slot]}</span>
+                    <span className="chore__title">{meal.title}</span>
+                  </span>
+                </button>
+              </li>
+            ))}
+          </ul>
+          {freeSlotsOn(date).length > 0 && (
+            <button className="button button--block meals__add-meal" type="button" onClick={() => addMeal(date)}>
+              Add a meal
+            </button>
+          )}
+        </div>
+      </Sheet>
+    );
+  } else if (screen.name === "plan") {
+    const { date, slot, isNew } = screen;
+    const meal = isNew ? undefined : mealOn(date, slot);
+    sheet = (
+      <Sheet label={mealNameOn(date, slot)} onClose={backToWeek}>
         <PlanDinnerScreen
           household={household}
-          heading={mealNameOn(screen.date, screen.slot)}
-          slot={screen.slot}
+          heading={mealNameOn(date, slot)}
+          slot={slot}
+          slotChoices={isNew ? freeSlotsOn(date) : undefined}
+          onSlotChange={(chosen) => setScreen({ name: "plan", date, slot: chosen, isNew })}
           meal={meal}
           recipes={recipes}
-          onSave={(dinner) => plan(screen.date, dinner, screen.slot)}
+          onSave={(dinner) => plan(date, dinner, slot)}
           onClear={meal ? () => clearDay(meal) : undefined}
           onBack={backToWeek}
         />
@@ -211,28 +239,31 @@ export function MealsView({ household }: MealsViewProps) {
         )}
 
         <ul className="panel meals__week" aria-label="Meals">
-          {weekDays(monday).flatMap((date) => {
-            const slots = slotsOn(date);
-            return slots.map((slot) => {
-              const meal = mealOn(date, slot);
-              const cook = cookLabel(household, meal?.cookMemberId ?? null);
-              const forHowMany = meal?.servings ? `for ${meal.servings}` : undefined;
-              const meta = [cook, forHowMany].filter(Boolean).join(", ");
-              // Days with only dinner stay as they were; days with more say which meal each row is.
-              const label = slots.length > 1 ? `${formatDay(date)}, ${SLOT_NAMES[slot].toLowerCase()}` : formatDay(date);
-              return (
-                <li key={`${date}-${slot}`} className={`panel__row chore${date < today ? " meals__past" : ""}`}>
-                  <button className="chore__open" type="button" onClick={() => setScreen({ name: "plan", date, slot })}>
-                    <ItemIcon name={meal ? iconFor(meal.title, "food") : "food"} />
-                    <span className="chore__text">
-                      <span className="meals__day">{label}</span>
-                      <span className={meal ? "chore__title" : "meals__empty"}>{meal ? meal.title : "Nothing planned"}</span>
-                      {meta && <span className="chore__meta">{meta.charAt(0).toUpperCase() + meta.slice(1)}</span>}
-                    </span>
-                  </button>
-                </li>
-              );
-            });
+          {weekDays(monday).map((date) => {
+            const planned = mealsOn(date);
+            const onlyDinner = planned.length === 1 && planned[0].slot === "dinner" ? planned[0] : undefined;
+            const cook = cookLabel(household, onlyDinner?.cookMemberId ?? null);
+            const forHowMany = onlyDinner?.servings ? `for ${onlyDinner.servings}` : undefined;
+            const meta = [cook, forHowMany].filter(Boolean).join(", ");
+            return (
+              <li key={date} className={`panel__row chore${date < today ? " meals__past" : ""}`}>
+                <button className="chore__open" type="button" onClick={() => openDay(date)}>
+                  <ItemIcon name={planned.length > 0 ? iconFor(planned[planned.length - 1].title, "food") : "food"} />
+                  <span className="chore__text">
+                    <span className="meals__day">{formatDay(date)}</span>
+                    {planned.length === 0 && <span className="meals__empty">Nothing planned</span>}
+                    {onlyDinner && <span className="chore__title">{onlyDinner.title}</span>}
+                    {!onlyDinner &&
+                      planned.map((meal) => (
+                        <span key={meal.slot} className="chore__title">
+                          {SLOT_NAMES[meal.slot]}: {meal.title}
+                        </span>
+                      ))}
+                    {meta && <span className="chore__meta">{meta.charAt(0).toUpperCase() + meta.slice(1)}</span>}
+                  </span>
+                </button>
+              </li>
+            );
           })}
         </ul>
 
@@ -261,7 +292,7 @@ export function MealsView({ household }: MealsViewProps) {
             Add a recipe
           </button>
           {recipes.length === 0 ? (
-            <p className="empty-state">Save the dinners you cook often, with their ingredients, to plan the week in a few taps.</p>
+            <p className="empty-state">No recipes yet.</p>
           ) : (
             <ul className="panel meals__recipes" aria-label="Recipes">
               {recipes.map((recipe) => (
@@ -279,36 +310,6 @@ export function MealsView({ household }: MealsViewProps) {
               ))}
             </ul>
           )}
-        </section>
-
-        <section className="chores__group" aria-labelledby="meal-times-heading">
-          <h2 id="meal-times-heading" className="section-title">
-            Breakfast and lunch
-          </h2>
-          <p className="field-hint">Dinner is always on the plan. Pick the days you also plan breakfast or lunch.</p>
-          {(["breakfast", "lunch"] as const).map((slot) => (
-            <div key={slot} className="meal-times__row">
-              <span className="meal-times__label">{SLOT_NAMES[slot]}</span>
-              <div className="meal-times__days" role="group" aria-label={`${SLOT_NAMES[slot]} on`}>
-                {WEEKDAY_NAMES.map((weekdayName, index) => {
-                  const weekday = index + 1;
-                  const isOn = mealTimes[slot].includes(weekday);
-                  return (
-                    <button
-                      key={weekdayName}
-                      className={`meals__pick meal-times__day${isOn ? " meals__pick--chosen" : ""}`}
-                      type="button"
-                      aria-pressed={isOn}
-                      aria-label={weekdayName}
-                      onClick={() => toggleMealTime(slot, weekday)}
-                    >
-                      {weekdayName.slice(0, 2)}
-                    </button>
-                  );
-                })}
-              </div>
-            </div>
-          ))}
         </section>
 
         {undoable && (
@@ -335,6 +336,9 @@ interface PlanDinnerScreenProps {
   // "Dinner today", "Breakfast on Sun 8 Nov".
   heading: string;
   slot: MealSlot;
+  // For a new meal: the meals still free that day, to pick from.
+  slotChoices?: MealSlot[];
+  onSlotChange: (slot: MealSlot) => void;
   meal?: PlannedMeal;
   recipes: Recipe[];
   onSave: (plan: MealPlan) => Promise<unknown>;
@@ -342,7 +346,7 @@ interface PlanDinnerScreenProps {
   onBack: () => void;
 }
 
-function PlanDinnerScreen({ household, heading, slot, meal, recipes, onSave, onClear, onBack }: PlanDinnerScreenProps) {
+function PlanDinnerScreen({ household, heading, slot, slotChoices, onSlotChange, meal, recipes, onSave, onClear, onBack }: PlanDinnerScreenProps) {
   const mealName = SLOT_NAMES[slot].toLowerCase();
   const fieldId = useId();
   const [title, setTitle] = useState(meal?.title ?? "");
@@ -383,6 +387,16 @@ function PlanDinnerScreen({ household, heading, slot, meal, recipes, onSave, onC
       </button>
       <h1 className="page-title">{heading}</h1>
       <form className="stacked-form" onSubmit={handleSubmit} noValidate>
+        {slotChoices && slotChoices.length > 1 && (
+          <fieldset className="segmented meals__slots" aria-label="Meal">
+            {slotChoices.map((choice) => (
+              <label key={choice} className="segmented__option">
+                <input type="radio" name="slot" checked={choice === slot} onChange={() => onSlotChange(choice)} />
+                {SLOT_NAMES[choice]}
+              </label>
+            ))}
+          </fieldset>
+        )}
         <label className="field-label" htmlFor={`${fieldId}-title`}>
           What's for {mealName}?
         </label>
@@ -414,7 +428,6 @@ function PlanDinnerScreen({ household, heading, slot, meal, recipes, onSave, onC
           <>
             <p className="field-label">How many eat?</p>
             <ServingsStepper label="How many eat?" servings={servings} onChange={setChosenServings} />
-            <p className="field-hint">The shopping list gets what {servings === 1 ? "one person needs" : `${servings} people need`}.</p>
           </>
         )}
 
@@ -580,12 +593,10 @@ function RecipeFormScreen({ recipe, onSave, onBack }: RecipeFormScreenProps) {
               {isImporting ? "Reading…" : "Fill in"}
             </button>
           </div>
-          {importError ? (
+          {importError && (
             <p className="form-error" role="alert">
               {importError}
             </p>
-          ) : (
-            <p className="field-hint">Paste a link and check what comes in, or type the recipe below.</p>
           )}
         </form>
       )}

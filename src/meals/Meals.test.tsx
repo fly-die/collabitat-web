@@ -52,7 +52,7 @@ describe("meals", () => {
   it("plans tonight from a saved recipe with who cooks, and shows it on Home", async () => {
     await openMeals();
     expect(dinners()).toHaveLength(7);
-    expect(screen.getByText(/Save the dinners you cook often/)).toBeInTheDocument();
+    expect(screen.getByText("No recipes yet.")).toBeInTheDocument();
 
     await addRecipe("Pasta", "500 g pasta\n\nSalt");
     expect(screen.getByRole("button", { name: /^Pasta.*Serves 4, 2 ingredients$/ })).toBeInTheDocument();
@@ -70,31 +70,25 @@ describe("meals", () => {
     expect(await screen.findByRole("list", { name: "Tonight's dinner" })).toHaveTextContent("PastaLea cooks");
   });
 
-  it("plans breakfast on the days it is switched on, and keeps Tonight to dinner", async () => {
+  it("adds breakfast and then dinner on a day, and keeps Tonight to dinner", async () => {
     await openMeals();
-    const todayName = new Intl.DateTimeFormat("en-GB", { weekday: "long" }).format(new Date());
-    const breakfastDays = () => within(screen.getByRole("group", { name: "Breakfast on" }));
-
-    fireEvent.click(breakfastDays().getByRole("button", { name: todayName }));
-    expect(await screen.findByRole("button", { name: /^Today, breakfastNothing planned/ })).toBeInTheDocument();
-    expect(breakfastDays().getByRole("button", { name: todayName })).toHaveAttribute("aria-pressed", "true");
-    expect(dinners()).toHaveLength(8);
-
-    fireEvent.click(screen.getByRole("button", { name: /^Today, breakfast/ }));
+    fireEvent.click(screen.getByRole("button", { name: /^Today/ }));
+    fireEvent.click(within(screen.getByRole("group", { name: "Meal" })).getByRole("radio", { name: "Breakfast" }));
     type("What's for breakfast?", "Zopf");
     fireEvent.click(within(screen.getByRole("dialog", { name: "Breakfast today" })).getByRole("button", { name: "Save breakfast" }));
-    await screen.findByRole("button", { name: /^Today, breakfastZopf/ });
-    fireEvent.click(screen.getByRole("button", { name: /^Today, dinner/ }));
+    await screen.findByRole("button", { name: /^TodayBreakfast: Zopf$/ });
+
+    fireEvent.click(screen.getByRole("button", { name: /^TodayBreakfast/ }));
+    fireEvent.click(within(screen.getByRole("dialog", { name: "Today" })).getByRole("button", { name: "Add a meal" }));
+    const dinner = screen.getByRole("dialog", { name: "Dinner today" });
+    expect(within(dinner).getAllByRole("radio").map((choice) => choice.closest("label")?.textContent)).toEqual(["Lunch", "Dinner"]);
     type("What's for dinner?", "Raclette");
-    fireEvent.click(screen.getByRole("button", { name: "Save dinner" }));
-    await screen.findByRole("button", { name: /^Today, dinnerRaclette/ });
+    fireEvent.click(within(dinner).getByRole("button", { name: "Save dinner" }));
+    await screen.findByRole("button", { name: /^TodayBreakfast: ZopfDinner: Raclette$/ });
 
     fireEvent.click(screen.getByRole("button", { name: "Home" }));
     expect(await screen.findByRole("list", { name: "Tonight's dinner" })).toHaveTextContent("Raclette");
     expect(screen.queryByText("Zopf")).not.toBeInTheDocument();
-    fireEvent.click(screen.getByRole("button", { name: "Meals" }));
-    fireEvent.click(await within(await screen.findByRole("group", { name: "Breakfast on" })).findByRole("button", { name: todayName }));
-    await waitFor(() => expect(dinners()).toHaveLength(7));
   });
 
   it("plans a past meal again on a day I pick, and Undo clears that day again", async () => {
@@ -141,7 +135,7 @@ describe("meals", () => {
 
   it("lists what the week's dinners need by shop category, and items added by hand with undo", async () => {
     await openMeals();
-    expect(await screen.findByText(/what they need shows up here/)).toBeInTheDocument();
+    expect(await screen.findByText("Nothing on the list yet.")).toBeInTheDocument();
 
     await addRecipe("Pasta", "500 g pasta");
     fireEvent.click(screen.getByRole("button", { name: /^Today/ }));
@@ -166,7 +160,7 @@ describe("meals", () => {
 
   it("ignores an empty item and says why the server refused one", async () => {
     await openMeals();
-    await screen.findByText(/what they need shows up here/);
+    await screen.findByText("Nothing on the list yet.");
     const serve = globalThis.fetch;
     const added: string[] = [];
     vi.stubGlobal(
@@ -223,7 +217,7 @@ describe("meals", () => {
     expect(await screen.findByText("You're shopping. 1 of 2 in the basket.")).toBeInTheDocument();
     expect(screen.getByRole("checkbox", { name: "2 l milk" })).toBeChecked();
     fireEvent.click(screen.getByRole("button", { name: "Money" }));
-    expect(await screen.findByText(/^Nothing here yet\./)).toBeInTheDocument();
+    expect(await screen.findByText("No expenses yet.")).toBeInTheDocument();
   });
 
   it("shows a flatmate's trip without the checkout, so I can still add to their list", async () => {
@@ -261,6 +255,7 @@ describe("meals", () => {
     type("What's for dinner?", "Leftovers");
     fireEvent.click(screen.getByRole("button", { name: "Save dinner" }));
     fireEvent.click(await screen.findByRole("button", { name: /^TodayLeftovers/ }));
+    fireEvent.click(within(screen.getByRole("dialog", { name: "Today" })).getByRole("button", { name: /^DinnerLeftovers/ }));
     fireEvent.click(screen.getByRole("button", { name: "Clear this day" }));
 
     expect(await screen.findByRole("status")).toHaveTextContent("Today cleared.");

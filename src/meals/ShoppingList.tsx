@@ -217,7 +217,7 @@ export function ShoppingList({ household, monday, onUndoable, onSheetChange, cha
         </p>
       )}
       {list && groups.length === 0 && (
-        <p className="empty-state">Plan dinners from recipes and what they need shows up here, added up and sorted like the shop.</p>
+        <p className="empty-state">Nothing on the list yet.</p>
       )}
       {groups.map(({ category, items: inCategory }) => (
         <div key={category} className="shopping__group">
