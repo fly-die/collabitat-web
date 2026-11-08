@@ -55,11 +55,10 @@ export function TodayOverview({ household, onOpenChores }: TodayOverviewProps) {
           Today
         </h2>
         <p className="today__note">
-          Nothing to do yet.{" "}
+          No chores yet.{" "}
           <button className="link-button" type="button" onClick={onOpenChores}>
-            Add your first chore
-          </button>{" "}
-          and this is where you see whose turn it is.
+            Add a chore
+          </button>
         </p>
       </section>
     );

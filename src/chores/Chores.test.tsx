@@ -66,7 +66,7 @@ describe("chores", () => {
 
     expect(screen.getByRole("button", { name: "Chores" })).toHaveAttribute("aria-current", "page");
     expect(heading()).toHaveTextContent("Nothing to track yet");
-    expect(screen.getByText(/like taking out the trash every week/)).toBeInTheDocument();
+    expect(screen.getByText("No chores yet.")).toBeInTheDocument();
 
     await addChore("Take out the trash");
     await addChore("Water the plants", "3", "day");

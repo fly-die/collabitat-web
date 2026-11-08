@@ -48,7 +48,7 @@ describe("today on Home", () => {
 
   it("points to the first chore, then shows what's due and coming up, and ticks it off with undo", async () => {
     await openHome();
-    fireEvent.click(screen.getByRole("button", { name: "Add your first chore" }));
+    fireEvent.click(screen.getByRole("button", { name: "Add a chore" }));
     expect(await screen.findByRole("heading", { level: 1, name: "Nothing to track yet" })).toBeInTheDocument();
 
     await addChore("Take out the trash");

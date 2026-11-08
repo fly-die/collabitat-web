@@ -129,7 +129,7 @@ export function CalendarScreen({ onBack }: CalendarScreenProps) {
         {days.length === 0 ? (
           <p className="empty-state">
             {activeColumn === ALL
-              ? "Nothing in the next 4 weeks. Add dates like a dentist appointment, a birthday or a parents\u2019 evening, for one person or for everyone."
+              ? "Nothing in the next 4 weeks."
               : "Nothing for them in the next 4 weeks."}
           </p>
         ) : (
@@ -161,7 +161,6 @@ export function CalendarScreen({ onBack }: CalendarScreenProps) {
           <h2 id="columns-heading" className="section-title">
             People and groups
           </h2>
-          <p className="field-hint">Give each person or group a column, like a child without an account or the whole family.</p>
           {columns.length > 0 && (
             <ul className="panel" aria-labelledby="columns-heading">
               {columns.map((column) => (

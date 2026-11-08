@@ -129,7 +129,7 @@ export function HouseholdView({
             <h2 id="account-card-heading" className="section-title">
               Add your email to log in anywhere
             </h2>
-            <p className="hint">Right now only this browser knows you. With an account you can open your household on any device.</p>
+            <p className="hint">Only this browser knows you right now.</p>
             <NewAccountForm submitLabel="Save account" onSubmit={onAddAccount} />
           </section>
         )}

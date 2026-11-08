@@ -39,7 +39,7 @@ describe("notes", () => {
 
   it("adds notes on Home, newest first, and moves ticked ones below", async () => {
     await openHome();
-    expect(screen.getByText(/^Jot down what everyone should know/)).toBeInTheDocument();
+    expect(screen.getByText("No notes yet.")).toBeInTheDocument();
     fireEvent.click(screen.getByRole("button", { name: "Add note" }));
     expect(screen.getByRole("alert")).toHaveTextContent("Type a note first, like Bins out on Monday.");
 

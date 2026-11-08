@@ -59,7 +59,7 @@ describe("money", () => {
 
     expect(screen.getByRole("button", { name: "Money" })).toHaveAttribute("aria-current", "page");
     expect(heading()).toHaveTextContent("You're all square");
-    expect(screen.getByText(/Nothing here yet/)).toBeInTheDocument();
+    expect(screen.getByText("No expenses yet.")).toBeInTheDocument();
 
     await addExpense("Groceries", "45,50");
 
@@ -212,7 +212,7 @@ describe("money", () => {
     openGroceries();
     deleteOpenExpense();
     expect(await screen.findByRole("status")).toHaveTextContent("Groceries deleted.");
-    expect(screen.getByText(/Nothing here yet/)).toBeInTheDocument();
+    expect(screen.getByText("No expenses yet.")).toBeInTheDocument();
     fireEvent.click(screen.getByRole("button", { name: "Undo" }));
     expect(await screen.findByText("Groceries")).toBeInTheDocument();
     expect(heading()).toHaveTextContent("Lea owes you 15.00");

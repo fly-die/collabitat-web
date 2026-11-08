@@ -131,7 +131,7 @@ export function SettingsScreen({ household, theme, onRename, onBack, onLogOut }:
                   Notifications on this device
                 </span>
                 <span className="setting__hint" id="notifications-hint">
-                  A reminder on the morning a chore is your turn, and a note when a flatmate adds an expense you share.
+                  Your chore turns and shared expenses.
                 </span>
               </span>
               <button

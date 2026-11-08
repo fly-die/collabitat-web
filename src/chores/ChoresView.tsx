@@ -192,10 +192,7 @@ export function ChoresView({ household }: ChoresViewProps) {
       )}
 
       {tasks.length === 0 && (
-        <p className="empty-state">
-          Add what needs doing again and again, like taking out the trash every week. Tick it off when it's done and
-          Collabitat works out when it's next due and whose turn it is.
-        </p>
+        <p className="empty-state">No chores yet.</p>
       )}
       {due.length > 0 && choreList("Due", due)}
       {later.length > 0 && choreList("Later", later)}

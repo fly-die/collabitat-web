@@ -121,7 +121,7 @@ export function HouseholdNotes({ household }: HouseholdNotesProps) {
         </p>
       )}
       {notes.length === 0 ? (
-        <p className="today__note">Jot down what everyone should know, like where the spare key is, or a quick todo.</p>
+        <p className="today__note">No notes yet.</p>
       ) : (
         <ul className="panel" aria-labelledby="notes-heading">
           {notes.map((note) => (

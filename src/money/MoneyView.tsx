@@ -367,10 +367,7 @@ function MoneyOverview({
           History
         </h2>
         {history.length === 0 ? (
-          <p className="empty-state">
-            Nothing here yet. Add what you paid for the flat, like groceries or cleaning stuff, and Collabitat works
-            out who pays whom.
-          </p>
+          <p className="empty-state">No expenses yet.</p>
         ) : (
           <ul className="panel" aria-labelledby="history-heading">
             {history.map(historyRow)}
