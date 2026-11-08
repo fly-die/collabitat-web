@@ -57,7 +57,10 @@ describe("today on Home", () => {
 
     expect(await screen.findByRole("list", { name: "Due today" })).toBeInTheDocument();
     expect(rowsOf("Due today")).toEqual(["Take out the trashYour turnDue todayDone"]);
+    // Coming up also waits for the calendar.
+    await screen.findByRole("list", { name: "Coming up" });
     expect(rowsOf("Coming up")).toEqual([`Water the plantsYour turnIn ${DAYS_AHEAD} days`]);
+    expect(screen.getAllByRole("heading", { name: "Coming up" })).toHaveLength(1);
 
     fireEvent.click(screen.getByRole("button", { name: "Mark Take out the trash done" }));
     expect(await screen.findByText("Nothing due today.")).toBeInTheDocument();

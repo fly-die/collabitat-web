@@ -7,6 +7,7 @@ import { useUndoable } from "../components/useUndoable";
 import { ChoreRow } from "../chores/ChoreRow";
 import { daysUntil } from "../chores/chore-format";
 import { useChores } from "../chores/useChores";
+import { ComingUp } from "./ComingUp";
 
 const COMING_UP_WITHIN_DAYS = 7;
 const COMING_UP_LIMIT = 3;
@@ -14,11 +15,12 @@ const COMING_UP_LIMIT = 3;
 interface TodayOverviewProps {
   household: Household;
   onOpenChores: () => void;
+  onOpenCalendar: () => void;
 }
 
-// The top of Home: what needs doing today (my turns first) and the next few things after that.
+// The top of Home: what needs doing today (my turns first), then the next week's chores and dates.
 // While chores load or the server is unreachable it stays out of the way; the Chores tab explains.
-export function TodayOverview({ household, onOpenChores }: TodayOverviewProps) {
+export function TodayOverview({ household, onOpenChores, onOpenCalendar }: TodayOverviewProps) {
   const { state, completeChore } = useChores();
   const { undoable, offerUndo, takeUndo, dismissUndo } = useUndoable();
   const [error, setError] = useState<string>();
@@ -48,8 +50,11 @@ export function TodayOverview({ household, onOpenChores }: TodayOverviewProps) {
     })
     .slice(0, COMING_UP_LIMIT);
 
+  const comingUpSection = <ComingUp household={household} chores={comingUp} onOpenChores={onOpenChores} onOpenCalendar={onOpenCalendar} />;
+
   if (state.tasks.length === 0) {
     return (
+      <>
       <section className="today" aria-labelledby="today-heading">
         <h2 id="today-heading" className="section-title">
           Today
@@ -61,6 +66,8 @@ export function TodayOverview({ household, onOpenChores }: TodayOverviewProps) {
           </button>
         </p>
       </section>
+      {comingUpSection}
+      </>
     );
   }
 
@@ -92,18 +99,7 @@ export function TodayOverview({ household, onOpenChores }: TodayOverviewProps) {
         )}
       </section>
 
-      {comingUp.length > 0 && (
-        <section className="today" aria-labelledby="coming-up-heading">
-          <h2 id="coming-up-heading" className="section-title">
-            Coming up
-          </h2>
-          <ul className="panel" aria-label="Coming up">
-            {comingUp.map((task) => (
-              <ChoreRow key={task.id} task={task} household={household} onOpen={onOpenChores} />
-            ))}
-          </ul>
-        </section>
-      )}
+      {comingUpSection}
 
       {undoable && (
         <UndoBar

@@ -11,7 +11,6 @@ import { InstallHint } from "./install/InstallHint";
 import { ChoresView } from "./chores/ChoresView";
 import { ShoppingNow } from "./home/ShoppingNow";
 import { CalendarScreen } from "./calendar/CalendarScreen";
-import { ComingUp } from "./home/ComingUp";
 import { HouseholdNotes } from "./home/HouseholdNotes";
 import { TodayOverview } from "./home/TodayOverview";
 import { TonightDinner } from "./home/TonightDinner";
@@ -144,8 +143,11 @@ export function App() {
           summary={
             <>
               <ShoppingNow household={state.household} onOpenMeals={() => openTab(Tab.Meals)} />
-              <TodayOverview household={state.household} onOpenChores={() => openTab(Tab.Chores)} />
-              <ComingUp onOpenCalendar={() => setIsCalendarOpen(true)} />
+              <TodayOverview
+                household={state.household}
+                onOpenChores={() => openTab(Tab.Chores)}
+                onOpenCalendar={() => setIsCalendarOpen(true)}
+              />
               <TonightDinner household={state.household} onOpenMeals={() => openTab(Tab.Meals)} />
               <MoneySummary household={state.household} onOpenMoney={() => openTab(Tab.Money)} />
               <HouseholdNotes household={state.household} />
