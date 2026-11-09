@@ -14,6 +14,13 @@
 Live: [fly-die.github.io/collabitat-web](https://fly-die.github.io/collabitat-web/)  
 Backend: [collabitat-api](https://github.com/fly-die/collabitat-api)
 
+## What it does
+
+- **Money:** shared expenses, who owes whom, and settling up in as few payments as possible.
+- **Chores:** recurring chores that rotate between flatmates, with a reminder when it's your turn.
+- **Meals:** a week plan, recipes (also imported from a link), and a shopping list that adds everything up and turns into an expense at checkout.
+- **Together:** a shared calendar and notes, live updates across phones, and an invite link to join.
+
 ## Install on your phone
 
 Open the live link, then:
@@ -31,6 +38,14 @@ npm run dev
 ```
 
 Open `http://localhost:5173`. The app expects the [API](https://github.com/fly-die/collabitat-api) on `http://localhost:3000`. Set `VITE_API_URL` to use another address.
+
+## Test
+
+```sh
+npm test
+```
+
+The UI tests include an automated accessibility check with [axe](https://github.com/dequelabs/axe-core).
 
 ## Scripts
 
