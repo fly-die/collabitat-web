@@ -787,6 +787,14 @@
   min-width: 8rem;
 }
 
+/* A note right under a list ("See the calendar") is a plain line with room above, not a second box. */
+.panel + .today__note {
+  margin-top: var(--space-2);
+  padding: 0 var(--space-1);
+  border: 0;
+  background: none;
+}
+
 .today__note {
   margin: 0;
   padding: var(--space-4);
