@@ -3,7 +3,7 @@ import { defineConfig } from "vite";
 import { VitePWA } from "vite-plugin-pwa";
 
 const DEFAULT_BASE_PATH = "/";
-const THEME_COLOR = "#1f6f5c";
+const THEME_COLOR = "#1e4d3b";
 const BACKGROUND_COLOR = "#eef2ef";
 
 export default defineConfig({

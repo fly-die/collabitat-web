@@ -3,14 +3,14 @@
   --color-ink-muted: #4c5a53;
   --color-surface: #ffffff;
   --color-canvas: #eef2ef;
-  --color-accent: #1f6f5c;
+  --color-accent: #1e4d3b;
   --color-owe: #a3461a;
   --color-line: #cbd5cf;
   --color-divider: #e2e8e4;
   --color-done: #e4ebe6;
-  --color-accent-tint: #e4efeb;
+  --color-accent-tint: #e3ebe7;
   /* The brand green and what sits on it stay the same in both themes. */
-  --color-brand: #1f6f5c;
+  --color-brand: #1e4d3b;
   --color-on-brand: #ffffff;
   --color-backdrop: rgb(23 32 28 / 45%);
   --color-shadow: rgb(23 32 28 / 25%);
@@ -47,7 +47,7 @@
   --color-ink-muted: #a1a4aa;
   --color-surface: #1b1c1f;
   --color-canvas: #111214;
-  --color-accent: #6cc2a8;
+  --color-accent: #7dbfa4;
   --color-owe: #e8956a;
   --color-line: #2e3035;
   --color-divider: #26272b;

@@ -1,6 +1,6 @@
 import { defineConfig, minimal2023Preset } from "@vite-pwa/assets-generator/config";
 
-const ICON_BACKGROUND = "#1f6f5c";
+const ICON_BACKGROUND = "#1e4d3b";
 const fullBleedIcon = { padding: 0, resizeOptions: { background: ICON_BACKGROUND } };
 
 export default defineConfig({
