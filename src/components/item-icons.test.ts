@@ -18,7 +18,12 @@ describe("item icons", () => {
     ["Buy toilet paper", "cart"],
     ["Migros groceries", "cart"],
     ["Toilet paper and soap", "cart"],
-    ["Pizza night", "food"],
+    ["Pizza night", "pizza"],
+    ["Flammkuchen", "pizza"],
+    ["Spaghetti Carbonara", "bowl"],
+    ["Dentist", "tooth"],
+    ["Zahnarzt Noëla", "tooth"],
+    ["Geburtstag Lea", "cake"],
     ["Znacht", "food"],
     ["Bier für die Party", "drink"],
     ["Miete November", "home"],
@@ -28,7 +33,7 @@ describe("item icons", () => {
     expect(iconFor(title, "chore")).toBe(icon);
   });
 
-  it.each(["Fix the doorbell", "Concert tickets", "Current account", "Parent visit"])(
+  it.each(["Fix the doorbell", "Concert tickets", "Current account", "Parent evening"])(
     "falls back when nothing fits: %j",
     (title) => {
       expect(iconFor(title, "receipt")).toBe("receipt");

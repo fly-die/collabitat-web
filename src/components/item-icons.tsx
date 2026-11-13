@@ -10,6 +10,18 @@ export type IconName =
   | "laundry"
   | "cart"
   | "food"
+  | "pizza"
+  | "bowl"
+  | "burger"
+  | "salad"
+  | "fish"
+  | "tooth"
+  | "medical"
+  | "cake"
+  | "travel"
+  | "guest"
+  | "study"
+  | "sport"
   | "drink"
   | "home"
   | "bolt"
@@ -18,7 +30,7 @@ export type IconName =
   | "receipt"
   | "payment";
 
-// German and English word starts, lower case. The longest match wins, so "toilet paper" is
+// Chores, expenses, dishes and dates share one list. German and English word starts, lower case. The longest match wins, so "toilet paper" is
 // shopping rather than the bathroom, and "Badezimmer putzen" is the bathroom rather than cleaning.
 const KEYWORDS: Record<Exclude<IconName, "chore" | "receipt" | "payment" | "calendar">, string[]> = {
   trash: ["trash", "garbage", "rubbish", "bin", "recycl", "müll", "muell", "abfall", "kehricht", "entsorg", "altglas", "altpapier", "karton", "compost", "kompost"],
@@ -28,7 +40,19 @@ const KEYWORDS: Record<Exclude<IconName, "chore" | "receipt" | "payment" | "cale
   kitchen: ["kitchen", "dish", "fridge", "oven", "kettle", "descal", "küche", "kueche", "geschirr", "kühlschrank", "ofen", "wasserkocher", "entkalk", "abwasch", "spül"],
   laundry: ["laundry", "washing", "towel", "bed sheet", "wäsche", "waesche", "waschen", "handt", "bettwäsche"],
   cart: ["grocer", "migros", "coop", "aldi", "lidl", "denner", "supermarket", "shopping", "einkauf", "lebensmittel", "toilet paper", "toilettenpapier", "wc-papier", "soap", "detergent", "seife", "putzmittel", "haushaltsartikel"],
-  food: ["pizza", "dinner", "lunch", "breakfast", "restaurant", "takeaway", "take-away", "food", "kebab", "sushi", "burger", "essen", "znacht", "zmittag", "zmorge", "abendessen", "mittagessen"],
+  food: ["dinner", "lunch", "breakfast", "restaurant", "takeaway", "take-away", "food", "essen", "znacht", "zmittag", "zmorge", "abendessen", "mittagessen"],
+  pizza: ["pizza", "flammkuchen", "tarte flamb", "calzone", "focaccia", "wähe", "quiche"],
+  bowl: ["pasta", "spaghetti", "penne", "lasagn", "nudel", "pesto", "carbonara", "bolognese", "ravioli", "gnocchi", "risotto", "soup", "suppe", "curry", "dal", "stew", "eintopf", "ramen", "chili", "reis", "rice"],
+  burger: ["burger", "sandwich", "kebab", "döner", "doener", "wrap", "taco", "burrito", "hot dog"],
+  salad: ["salad", "salat", "veggie", "gemüse", "gemuese", "vegetable"],
+  fish: ["fish", "fisch", "sushi", "lachs", "salmon", "tuna", "thunfisch"],
+  tooth: ["dentist", "dental", "zahnarzt", "zahn", "tooth"],
+  medical: ["doctor", "arzt", "ärztin", "hospital", "spital", "physio", "therap", "vaccin", "impf", "checkup", "check-up"],
+  cake: ["birthday", "geburtstag", "bday", "cake", "kuchen", "torte"],
+  travel: ["flight", "flug", "trip", "ferien", "holiday", "vacation", "urlaub", "reise", "airport", "flughafen"],
+  guest: ["visit", "besuch", "guest", "gast", "gäste"],
+  study: ["exam", "prüfung", "pruefung", "test", "uni", "lecture", "vorlesung", "school", "schule", "abgabe", "deadline"],
+  sport: ["gym", "training", "sport", "match", "football", "fussball", "yoga", "workout"],
   drink: ["beer", "wine", "drink", "coffee", "party", "bier", "wein", "kaffee", "getränk", "apéro", "apero"],
   home: ["rent", "miete", "nebenkosten", "furniture", "möbel", "ikea", "repair", "reparatur"],
   bolt: ["electric", "power", "energy", "strom", "ewz", "heating", "heizung"],
@@ -58,6 +82,71 @@ export function iconFor(title: string, fallback: IconName): IconName {
 
 // Line icons on a 24px grid, drawn in the same stroke style as the tab bar.
 const PATHS: Record<IconName, ReactNode> = {
+  pizza: (
+    <>
+      <path d="M12 21 4.5 6.5a17 17 0 0 1 15 0z" />
+      <path d="M10 10v.01M14 11.5v.01M12 15v.01" />
+    </>
+  ),
+  bowl: (
+    <>
+      <path d="M4 12h16a8 8 0 0 1-16 0z" />
+      <path d="M9.5 8.5c0-1.5 1-1.5 1-3M14 8.5c0-1.5 1-1.5 1-3" />
+    </>
+  ),
+  burger: (
+    <>
+      <path d="M5 10.5a7 5.5 0 0 1 14 0z" />
+      <path d="M4 14h16" />
+      <rect x="5" y="17" width="14" height="3" rx="1.5" />
+    </>
+  ),
+  salad: (
+    <>
+      <path d="M5 19c0-8 5-13 14-14 0 9-5 14-14 14z" />
+      <path d="m5 19 8-8" />
+    </>
+  ),
+  fish: (
+    <>
+      <path d="M3 12c3-4.5 9-6 14-3l4-3v12l-4-3c-5 3-11 1.5-14-3z" />
+      <path d="M8 11v.01" />
+    </>
+  ),
+  tooth: (
+    <path d="M8 3.5c-2.5 0-4 2-4 4.5 0 3 1.5 4.5 2 7.5.4 2.5.8 5 2.2 5 1.6 0 1.3-5 3.8-5s2.2 5 3.8 5c1.4 0 1.8-2.5 2.2-5 .5-3 2-4.5 2-7.5 0-2.5-1.5-4.5-4-4.5-1.8 0-2.5 1-4 1s-2.2-1-4-1z" />
+  ),
+  medical: (
+    <>
+      <rect x="4" y="4" width="16" height="16" rx="3" />
+      <path d="M12 8v8M8 12h8" />
+    </>
+  ),
+  cake: (
+    <>
+      <path d="M5 20v-7h14v7zM4 20h16" />
+      <path d="M12 13V9M12 6v.01" />
+    </>
+  ),
+  travel: (
+    <>
+      <path d="M3 13.5 21 5l-5.5 15-3-6.5z" />
+      <path d="M12.5 13.5 21 5" />
+    </>
+  ),
+  guest: (
+    <>
+      <circle cx="12" cy="8" r="3.5" />
+      <path d="M5 20a7 7 0 0 1 14 0" />
+    </>
+  ),
+  study: (
+    <>
+      <path d="M5 4h11a3 3 0 0 1 3 3v13H8a3 3 0 0 1-3-3z" />
+      <path d="M5 17a3 3 0 0 1 3-3h11" />
+    </>
+  ),
+  sport: <path d="M7 8v8M17 8v8M4 10v4M20 10v4M7 12h10" />,
   trash: (
     <>
       <path d="M4 7h16M9 7V5h6v2M6 7l1 13h10l1-13" />
