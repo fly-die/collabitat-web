@@ -1,4 +1,4 @@
-import { fireEvent, render, screen } from "@testing-library/react";
+import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { App } from "../App";
 import { SESSION_STORAGE_KEY } from "../api/client";
@@ -80,6 +80,37 @@ describe("settings", () => {
     expect(await screen.findByRole("switch", { checked: false })).toBe(notificationSwitch());
     expect(server.pushDevices.size).toBe(0);
     expect(push.subscription()).toBeNull();
+  });
+
+  it("lets me switch kinds off once notifications are on, and keeps the server in step", async () => {
+    installFakePush();
+    await openSettings();
+    expect(screen.queryByRole("checkbox", { name: /Money/ })).not.toBeInTheDocument();
+
+    fireEvent.click(await screen.findByRole("switch", { checked: false }));
+    const money = await screen.findByRole("checkbox", { name: /Money/ });
+    expect(money).toBeChecked();
+    expect(screen.getByRole("checkbox", { name: /Shopping/ })).toBeChecked();
+
+    fireEvent.click(money);
+
+    expect(money).not.toBeChecked();
+    await waitFor(() =>
+      expect([...server.notificationPreferences.values()]).toEqual([{ chores: true, money: false, shopping: true }]),
+    );
+  });
+
+  it("changes the currency for the household and shows it where I type an amount", async () => {
+    await openSettings();
+    expect(screen.getByRole("radio", { name: "CHF" })).toBeChecked();
+
+    fireEvent.click(screen.getByRole("radio", { name: "EUR" }));
+    await waitFor(() => expect(screen.getByRole("radio", { name: "EUR" })).toBeChecked());
+
+    fireEvent.click(screen.getByRole("button", { name: "Back" }));
+    fireEvent.click(await screen.findByRole("button", { name: "Money" }));
+    fireEvent.click(await screen.findByRole("button", { name: "Add an expense" }));
+    expect(await screen.findByLabelText("Amount")).toHaveAttribute("placeholder", "EUR 0.00");
   });
 
   it("sends the device again when the server lost it", async () => {

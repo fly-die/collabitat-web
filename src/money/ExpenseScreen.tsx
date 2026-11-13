@@ -140,7 +140,7 @@ export function ExpenseScreen({ household, expense, onSave, onDelete, onBack, ti
           id={`${fieldId}-amount`}
           className="text-input text-input--amount"
           value={amount}
-          placeholder="0.00"
+          placeholder={`${household.currency} 0.00`}
           inputMode="decimal"
           autoComplete="off"
           {...invalidProps("amount")}

@@ -1,6 +1,8 @@
+import { NotificationKinds } from "./NotificationKinds";
 import { useId, useState, type FormEvent } from "react";
 import type { ApiError } from "../api/client";
 import type { Household } from "../api/households-api";
+import { CURRENCIES } from "../api/households-api";
 import { FlatmatesSection } from "../households/FlatmatesSection";
 import { InviteShareFeedback, useInviteShare } from "../households/InviteShare";
 import { useNotifications, type NotificationStatus } from "../notifications/useNotifications";
@@ -18,6 +20,7 @@ interface SettingsScreenProps {
   onRename: (name: string) => Promise<unknown>;
   onAddMember: (name: string) => Promise<void>;
   onRemoveMember: (memberId: string) => Promise<void>;
+  onSetCurrency: (currency: string) => Promise<void>;
   onBack: () => void;
   onLogOut: () => void;
 }
@@ -33,12 +36,13 @@ const EXPLANATIONS: Partial<Record<NotificationStatus, string>> = {
   blocked: "Notifications are blocked for Collabitat. Allow them in your browser's site settings, then come back here.",
 };
 
-export function SettingsScreen({ household, theme, onRename, onAddMember, onRemoveMember, onBack, onLogOut }: SettingsScreenProps) {
+export function SettingsScreen({ household, theme, onRename, onAddMember, onRemoveMember, onSetCurrency, onBack, onLogOut }: SettingsScreenProps) {
   const { status, isBusy, error, turnOn, turnOff, checkAgain } = useNotifications();
   const me = household.members.find((member) => member.id === household.currentMemberId);
   const fieldId = useId();
   const [name, setName] = useState(me?.name ?? "");
   const [nameMessage, setNameMessage] = useState<{ text: string; isError: boolean }>();
+  const [currencyError, setCurrencyError] = useState<string>();
   const invite = useInviteShare(household.name, household.inviteCode);
 
   async function saveName(event: FormEvent) {
@@ -53,6 +57,10 @@ export function SettingsScreen({ household, theme, onRename, onAddMember, onRemo
     } catch (renameError) {
       setNameMessage({ text: (renameError as ApiError).message, isError: true });
     }
+  }
+  function chooseCurrency(currency: string) {
+    setCurrencyError(undefined);
+    onSetCurrency(currency).catch((currencyChangeError: ApiError) => setCurrencyError(currencyChangeError.message));
   }
   const isOn = status === "on";
   const explanation = EXPLANATIONS[status];
@@ -123,6 +131,33 @@ export function SettingsScreen({ household, theme, onRename, onAddMember, onRemo
         </fieldset>
       </section>
 
+      <section aria-labelledby="currency-heading">
+        <h2 id="currency-heading" className="section-title">
+          Currency
+        </h2>
+        <fieldset className="segmented" aria-labelledby="currency-heading" aria-describedby="currency-hint">
+          {CURRENCIES.map((currency) => (
+            <label key={currency} className="segmented__option">
+              <input
+                type="radio"
+                name="currency"
+                checked={household.currency === currency}
+                onChange={() => chooseCurrency(currency)}
+              />
+              {currency}
+            </label>
+          ))}
+        </fieldset>
+        <p className="setting__hint" id="currency-hint">
+          For everyone in {household.name}. Amounts you already entered stay as they are.
+        </p>
+        {currencyError && (
+          <p className="form-error" role="alert">
+            {currencyError}
+          </p>
+        )}
+      </section>
+
       <section aria-labelledby="notifications-heading">
         <h2 id="notifications-heading" className="section-title">
           Notifications
@@ -160,6 +195,7 @@ export function SettingsScreen({ household, theme, onRename, onAddMember, onRemo
                 <span className="switch__thumb" />
               </button>
             </div>
+            {isOn && <NotificationKinds />}
           </div>
         )}
         {error && (

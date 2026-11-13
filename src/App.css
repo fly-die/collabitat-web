@@ -2041,3 +2041,27 @@ select.text-input {
     margin-top: 1.75rem;
   }
 }
+
+/* The kinds of notifications: a ticked row each, under the main switch. */
+.settings__kinds {
+  margin: var(--space-2) 0 0;
+  padding: var(--space-2) 0 0;
+  border-top: 1px solid var(--color-divider);
+  list-style: none;
+}
+
+.settings__kind {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  min-height: var(--touch-target, 2.75rem);
+  padding: var(--space-2) 0;
+  cursor: pointer;
+}
+
+.settings__kind input {
+  flex: none;
+  width: 1.375rem;
+  height: 1.375rem;
+  accent-color: var(--color-accent);
+}

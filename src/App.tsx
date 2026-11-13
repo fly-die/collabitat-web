@@ -39,6 +39,7 @@ export function App() {
     addAccount,
     addMember,
     renameMe,
+    setCurrency,
     removeMember,
   } = useHousehold();
   useLiveConnection(state.status === "ready");
@@ -128,6 +129,7 @@ export function App() {
           household={state.household}
           theme={theme}
           onRename={renameMe}
+          onSetCurrency={setCurrency}
           onAddMember={addMember}
           onRemoveMember={removeMember}
           onBack={() => setIsSettingsOpen(false)}
