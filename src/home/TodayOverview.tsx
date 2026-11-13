@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { createPortal } from "react-dom";
 import type { ApiError } from "../api/client";
 import type { Household } from "../api/households-api";
 import type { Task } from "../api/tasks-api";
@@ -16,11 +17,13 @@ interface TodayOverviewProps {
   household: Household;
   onOpenChores: () => void;
   onOpenCalendar: () => void;
+  // Where Home shows what's coming up: under its Calendar row, not under today's chores.
+  comingUpSlot: HTMLElement | null;
 }
 
 // The top of Home: what needs doing today (my turns first), then the next week's chores and dates.
 // While chores load or the server is unreachable it stays out of the way; the Chores tab explains.
-export function TodayOverview({ household, onOpenChores, onOpenCalendar }: TodayOverviewProps) {
+export function TodayOverview({ household, onOpenChores, onOpenCalendar, comingUpSlot }: TodayOverviewProps) {
   const { state, completeChore } = useChores();
   const { undoable, offerUndo, takeUndo, dismissUndo } = useUndoable();
   const [error, setError] = useState<string>();
@@ -50,7 +53,12 @@ export function TodayOverview({ household, onOpenChores, onOpenCalendar }: Today
     })
     .slice(0, COMING_UP_LIMIT);
 
-  const comingUpSection = <ComingUp household={household} chores={comingUp} onOpenChores={onOpenChores} onOpenCalendar={onOpenCalendar} />;
+  const comingUpSection =
+    comingUpSlot &&
+    createPortal(
+      <ComingUp household={household} chores={comingUp} onOpenChores={onOpenChores} onOpenCalendar={onOpenCalendar} />,
+      comingUpSlot,
+    );
 
   if (state.tasks.length === 0) {
     return (

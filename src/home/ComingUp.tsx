@@ -2,7 +2,7 @@ import type { ReactNode } from "react";
 import type { Household } from "../api/households-api";
 import type { Task } from "../api/tasks-api";
 import { ChoreRow } from "../chores/ChoreRow";
-import { ItemIcon } from "../components/item-icons";
+import { ItemIcon, iconFor } from "../components/item-icons";
 import { describeEntryMeta, describeUpcomingDay } from "../calendar/calendar-format";
 import { useCalendar } from "../calendar/useCalendar";
 import { addDays } from "../meals/week";
@@ -40,7 +40,8 @@ export function ComingUp({ household, chores, onOpenChores, onOpenCalendar }: Co
       row: (
         <li key={`date-${entry.id}`} className="panel__row chore">
           <button className="chore__open" type="button" onClick={onOpenCalendar}>
-            <ItemIcon name="calendar" />
+            {/* The card already carries the calendar icon, so a date only gets one that says more. */}
+            {iconFor(entry.title, "calendar") !== "calendar" && <ItemIcon name={iconFor(entry.title, "calendar")} />}
             <span className="chore__text">
               <span className="chore__title">
                 {describeUpcomingDay(entry.day, today)}: {entry.title}

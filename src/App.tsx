@@ -21,7 +21,8 @@ import { SettingsScreen } from "./settings/SettingsScreen";
 import { useTheme } from "./settings/useTheme";
 import { MoneySummary } from "./money/MoneySummary";
 import { MoneyView } from "./money/MoneyView";
-import { Tab, TabBar } from "./navigation/TabBar";
+import { CALENDAR_ICON_PATHS, HomeRow } from "./navigation/HomeRow";
+import { Tab, TAB_ICON_PATHS, TabBar } from "./navigation/TabBar";
 
 type EntryScreen = "welcome" | "start" | "paste-invite" | "log-in";
 
@@ -58,6 +59,7 @@ export function App() {
   // Settings and the calendar open over Home; any tab change leaves them.
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
   const [isCalendarOpen, setIsCalendarOpen] = useState(false);
+  const [comingUpSlot, setComingUpSlot] = useState<HTMLElement | null>(null);
   const openTab = (tab: Tab) => {
     setIsSettingsOpen(false);
     setIsCalendarOpen(false);
@@ -145,14 +147,43 @@ export function App() {
           summary={
             <>
               <ShoppingNow household={state.household} onOpenMeals={() => openTab(Tab.Meals)} />
-              <TodayOverview
-                household={state.household}
-                onOpenChores={() => openTab(Tab.Chores)}
-                onOpenCalendar={() => setIsCalendarOpen(true)}
-              />
-              <TonightDinner household={state.household} onOpenMeals={() => openTab(Tab.Meals)} />
-              <MoneySummary household={state.household} onOpenMoney={() => openTab(Tab.Money)} />
-              <HouseholdNotes household={state.household} />
+              <div className="home-rows">
+                <HomeRow
+                  title="Chores"
+                  icon={TAB_ICON_PATHS[Tab.Chores]}
+                  onOpen={() => openTab(Tab.Chores)}
+                >
+                  <TodayOverview
+                    household={state.household}
+                    onOpenChores={() => openTab(Tab.Chores)}
+                    onOpenCalendar={() => setIsCalendarOpen(true)}
+                    comingUpSlot={comingUpSlot}
+                  />
+                </HomeRow>
+                <HomeRow
+                  title="Meals"
+                  icon={TAB_ICON_PATHS[Tab.Meals]}
+                  onOpen={() => openTab(Tab.Meals)}
+                >
+                  <TonightDinner household={state.household} onOpenMeals={() => openTab(Tab.Meals)} />
+                </HomeRow>
+                <HomeRow
+                  title="Money"
+                  icon={TAB_ICON_PATHS[Tab.Money]}
+                  onOpen={() => openTab(Tab.Money)}
+                >
+                  <MoneySummary household={state.household} onOpenMoney={() => openTab(Tab.Money)} />
+                </HomeRow>
+                <HomeRow
+                  title="Calendar"
+                  icon={CALENDAR_ICON_PATHS}
+                  onOpen={() => setIsCalendarOpen(true)}
+                  statusRef={setComingUpSlot}
+                />
+                <div className="home-row home-row--wide">
+                  <HouseholdNotes household={state.household} />
+                </div>
+              </div>
             </>
           }
           footer={<InstallHint />}

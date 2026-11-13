@@ -9,7 +9,7 @@ export const Tab = {
 
 export type Tab = (typeof Tab)[keyof typeof Tab];
 
-const TAB_ICON_PATHS: Record<Tab, ReactNode> = {
+export const TAB_ICON_PATHS: Record<Tab, ReactNode> = {
   [Tab.Home]: <path d="M4 11 12 4l8 7v9h-5v-6H9v6H4z" />,
   [Tab.Money]: (
     <>
