@@ -267,15 +267,6 @@ export function MealsView({ household }: MealsViewProps) {
           })}
         </ul>
 
-        <PastMeals
-          today={today}
-          onPlan={(date, mealPlan) => plan(date, mealPlan)}
-          onClear={(date) => clear(date)}
-          onUndoable={offerUndo}
-          onSheetChange={setIsPickingDay}
-          week={state.week}
-        />
-
         <ShoppingList
           household={household}
           monday={monday}
@@ -311,6 +302,15 @@ export function MealsView({ household }: MealsViewProps) {
             </ul>
           )}
         </section>
+
+        <PastMeals
+          today={today}
+          onPlan={(date, mealPlan) => plan(date, mealPlan)}
+          onClear={(date) => clear(date)}
+          onUndoable={offerUndo}
+          onSheetChange={setIsPickingDay}
+          week={state.week}
+        />
 
         {undoable && (
           <UndoBar
@@ -435,7 +435,7 @@ function PlanDinnerScreen({ household, heading, slot, slotChoices, onSlotChange,
           Who cooks?
         </label>
         <select id={`${fieldId}-cook`} className="text-input" value={cookMemberId} onChange={(event) => setCookMemberId(event.target.value)}>
-          <option value="">Not decided</option>
+          <option value="">Everyone</option>
           {household.members.map((member) => (
             <option key={member.id} value={member.id}>
               {member.id === household.currentMemberId ? "You" : member.name}

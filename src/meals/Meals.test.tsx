@@ -67,7 +67,7 @@ describe("meals", () => {
     expect(await screen.findByRole("button", { name: /^TodayPastaLea cooks$/ })).toBeInTheDocument();
 
     fireEvent.click(screen.getByRole("button", { name: "Home" }));
-    expect(await screen.findByRole("list", { name: "Tonight's dinner" })).toHaveTextContent("PastaLea cooks");
+    expect(await screen.findByRole("list", { name: "Tonight's dinner" })).toHaveTextContent("PastaTonightLea cooks");
   });
 
   it("adds breakfast and then dinner on a day, and keeps Tonight to dinner", async () => {
@@ -102,6 +102,7 @@ describe("meals", () => {
       await screen.findByRole("button", { name: new RegExp(`^${day}${dish}`) });
     }
 
+    fireEvent.click(await screen.findByRole("button", { name: "Past meals" }));
     const pastMeals = await screen.findByRole("list", { name: "Past meals" });
     await waitFor(() =>
       expect(within(pastMeals).getAllByRole("listitem").map((row) => row.textContent)).toEqual([

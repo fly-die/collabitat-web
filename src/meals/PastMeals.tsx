@@ -25,9 +25,11 @@ interface PastMealsProps {
 const timesLabel = (times: number) => (times === 1 ? "once" : times === 2 ? "twice" : `${times} times`);
 
 // Dishes the household had before, to plan again instead of thinking of something new.
+// An archive: it stays behind a small button until someone wants to browse it.
 export function PastMeals({ today, onPlan, onClear, onUndoable, onSheetChange, week }: PastMealsProps) {
   const [pastMeals, setPastMeals] = useState<PastMeal[]>();
   const [loadAttempt, setLoadAttempt] = useState(0);
+  const [isOpen, setIsOpen] = useState(false);
   const [isShowingAll, setIsShowingAll] = useState(false);
   const [picking, setPicking] = useState<PastMeal>();
   const [error, setError] = useState<string>();
@@ -87,28 +89,43 @@ export function PastMeals({ today, onPlan, onClear, onUndoable, onSheetChange, w
   const shown = isShowingAll ? pastMeals : pastMeals.slice(0, SHOWN_AT_FIRST);
 
   return (
-    <section className="chores__group" aria-labelledby="past-meals-heading">
-      <h2 id="past-meals-heading" className="section-title">
+    <section className="past-meals" aria-labelledby="past-meals-heading">
+      <h2 id="past-meals-heading" className="visually-hidden">
         Past meals
       </h2>
-      <ul className="panel" aria-labelledby="past-meals-heading">
-        {shown.map((meal) => (
-          <li key={meal.title} className="panel__row chore">
-            <button className="chore__open" type="button" onClick={() => openPicker(meal)}>
-              <span className="chore__text">
-                <span className="chore__title">{meal.title}</span>
-                <span className="chore__meta">
-                  Last on {formatDay(meal.lastOn)}, {timesLabel(meal.times)}
+      <button
+        className="button button--outline settings-button"
+        type="button"
+        aria-expanded={isOpen}
+        onClick={() => setIsOpen((open) => !open)}
+      >
+        <svg className="settings-button__icon" viewBox="0 0 24 24" aria-hidden="true">
+          <path d="M4 12a8 8 0 1 0 2.5-5.8M4 5v4h4M12 8v4l3 2" />
+        </svg>
+        {isOpen ? "Hide past meals" : "Past meals"}
+      </button>
+      {isOpen && (
+        <>
+        <ul className="panel" aria-labelledby="past-meals-heading">
+          {shown.map((meal) => (
+            <li key={meal.title} className="panel__row chore">
+              <button className="chore__open" type="button" onClick={() => openPicker(meal)}>
+                <span className="chore__text">
+                  <span className="chore__title">{meal.title}</span>
+                  <span className="chore__meta">
+                    Last on {formatDay(meal.lastOn)}, {timesLabel(meal.times)}
+                  </span>
                 </span>
-              </span>
-            </button>
-          </li>
-        ))}
-      </ul>
-      {!isShowingAll && pastMeals.length > SHOWN_AT_FIRST && (
-        <button className="link-button past-meals__more" type="button" onClick={() => setIsShowingAll(true)}>
-          Show all {pastMeals.length}
-        </button>
+              </button>
+            </li>
+          ))}
+        </ul>
+        {!isShowingAll && pastMeals.length > SHOWN_AT_FIRST && (
+          <button className="link-button past-meals__more" type="button" onClick={() => setIsShowingAll(true)}>
+            Show all {pastMeals.length}
+          </button>
+        )}
+        </>
       )}
       {error && (
         <p className="form-error" role="alert">

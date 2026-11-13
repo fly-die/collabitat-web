@@ -202,7 +202,7 @@ export function ShoppingList({ household, monday, onUndoable, onSheetChange, cha
         <input
           className="text-input"
           aria-label="Add to the list"
-          placeholder="2 l milk"
+          placeholder="Yoghurt"
           autoComplete="off"
           value={line}
           onChange={(event) => setLine(event.target.value)}

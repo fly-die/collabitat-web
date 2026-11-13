@@ -10,7 +10,7 @@ interface TonightDinnerProps {
   onOpenMeals: () => void;
 }
 
-// On Home: what's for dinner tonight and who cooks, or a way to plan it. Quiet while loading.
+// On Home: what's for dinner tonight, who cooks if someone was picked, or a way to plan it. Quiet while loading.
 export function TonightDinner({ household, onOpenMeals }: TonightDinnerProps) {
   const today = todayIsoDate();
   const { state } = useMeals(mondayOf(today));
@@ -29,10 +29,14 @@ export function TonightDinner({ household, onOpenMeals }: TonightDinnerProps) {
         <ul className="panel" aria-label="Tonight's dinner">
           <li className="panel__row chore">
             <button className="chore__open" type="button" onClick={onOpenMeals}>
-              <ItemIcon name={iconFor(tonight.title, "food")} />
+              {/* The card already carries the plain meal icon, so a dish only gets one that says more. */}
+              {iconFor(tonight.title, "food") !== "food" && <ItemIcon name={iconFor(tonight.title, "food")} />}
               <span className="chore__text">
                 <span className="chore__title">{tonight.title}</span>
-                <span className="chore__meta">{cook ?? "Nobody's cooking yet"}</span>
+                <span className="chore__meta">
+                  <span className="tonight__when">Tonight</span>
+                  {cook && <span>{cook}</span>}
+                </span>
               </span>
             </button>
           </li>
