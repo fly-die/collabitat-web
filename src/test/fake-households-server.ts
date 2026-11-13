@@ -16,6 +16,7 @@ const INVITE_NOT_FOUND = { error: "INVITE_NOT_FOUND", message: "This invite link
 export function createFakeHouseholdsServer({ pushPublicKey }: { pushPublicKey?: string } = {}) {
   // Devices with notifications on: endpoint to member id.
   const pushDevices = new Map<string, string>();
+  const notificationPreferences = new Map<string, { chores: boolean; money: boolean; shopping: boolean }>();
   const recipesByHouseholdId = new Map<string, Recipe[]>();
   const mealsByHouseholdId = new Map<string, PlannedMeal[]>();
   const mealTimesByHouseholdId = new Map<string, { breakfast: number[]; lunch: number[] }>();
@@ -259,7 +260,7 @@ export function createFakeHouseholdsServer({ pushPublicKey }: { pushPublicKey?: 
       if (problem) {
         return problem;
       }
-      const household = { id: crypto.randomUUID(), name, inviteCode: "a".repeat(31) + households.size, members: [] };
+      const household = { id: crypto.randomUUID(), name, inviteCode: "a".repeat(31) + households.size, currency: "CHF", members: [] };
       households.set(household.id, household);
       const member = addMember(household, body.memberName.trim(), true);
       addAccount(body, member.id);
@@ -526,6 +527,13 @@ export function createFakeHouseholdsServer({ pushPublicKey }: { pushPublicKey?: 
       return json(200, weekOf(household, from));
     }
 
+    if (segments[1] === "notification-preferences") {
+      if (method === "PUT") {
+        notificationPreferences.set(currentMemberId, body);
+      }
+      return json(200, notificationPreferences.get(currentMemberId) ?? { chores: true, money: true, shopping: true });
+    }
+
     if (segments[1] === "push-subscription") {
       if (method === "PUT") {
         pushDevices.set(body.endpoint, currentMemberId);
@@ -594,6 +602,11 @@ export function createFakeHouseholdsServer({ pushPublicKey }: { pushPublicKey?: 
       return json(200, moneyOf(household));
     }
 
+    if (method === "PUT" && pathname === "/household/currency") {
+      household.currency = body.currency;
+      return json(200, view());
+    }
+
     if (method === "PUT" && pathname === "/household/me") {
       const taken = household.members.find((member) => member.id !== currentMemberId && member.name.toLowerCase() === name.toLowerCase());
       if (taken) {
@@ -632,12 +645,12 @@ export function createFakeHouseholdsServer({ pushPublicKey }: { pushPublicKey?: 
 
   // Stands in for a flatmate who joined before accounts existed.
   function startSessionWithoutAccount(householdName: string, memberName: string) {
-    const household = { id: crypto.randomUUID(), name: householdName, inviteCode: "b".repeat(32), members: [] };
+    const household = { id: crypto.randomUUID(), name: householdName, inviteCode: "b".repeat(32), currency: "CHF", members: [] };
     households.set(household.id, household);
     const token = `${crypto.randomUUID().replaceAll("-", "")}${"t".repeat(11)}`;
     memberIdsByToken.set(token, addMember(household, memberName, true).id);
     return token;
   }
 
-  return { households, handle, startSessionWithoutAccount, pushDevices };
+  return { households, handle, startSessionWithoutAccount, pushDevices, notificationPreferences };
 }

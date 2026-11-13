@@ -6,9 +6,13 @@ export interface Member {
   hasJoined: boolean;
 }
 
+export const CURRENCIES = ["CHF", "EUR", "USD", "GBP"] as const;
+
 export interface Household {
   id: string;
   name: string;
+  // What amounts are in, the same for everyone in the household.
+  currency: string;
   inviteCode: string;
   currentMemberId: string;
   currentMemberHasAccount: boolean;
@@ -77,6 +81,8 @@ export const householdsApi = {
   get: () => request<Household>("/household"),
   addMember: (name: string) =>
     request<Household>("/household/members", { method: "POST", body: JSON.stringify({ name }) }),
+  setCurrency: (currency: string) =>
+    request<Household>("/household/currency", { method: "PUT", body: JSON.stringify({ currency }) }),
   renameMe: (name: string) => request<Household>("/household/me", { method: "PUT", body: JSON.stringify({ name }) }),
   removeMember: (memberId: string) =>
     request<Household>(`/household/members/${safeMemberId(memberId)}`, { method: "DELETE" }),
