@@ -2008,10 +2008,17 @@ select.text-input {
   display: none;
 }
 
+/* Only a real pointer hovers. A phone keeps the hover style on the last row tapped, which looked stuck. */
 .home-row__status .chore__open:hover,
 .home-row__status .chore__open:active {
-  border-radius: var(--radius);
-  background: var(--color-accent-tint);
+  background: transparent;
+}
+
+@media (hover: hover) {
+  .home-row__status .chore__open:hover {
+    border-radius: var(--radius);
+    background: var(--color-accent-tint);
+  }
 }
 
 /* Phones: every Home card is one size, a name and one line. */
