@@ -113,6 +113,51 @@ describe("settings", () => {
     expect(await screen.findByLabelText("Amount")).toHaveAttribute("placeholder", "EUR 0.00");
   });
 
+  it("puts my choice back and says why when the server can't save a kind or the currency", async () => {
+    installFakePush();
+    const failsFor = (path: string) =>
+      vi.stubGlobal(
+        "fetch",
+        vi.fn((input: RequestInfo | URL, init?: RequestInit) =>
+          init?.method === "PUT" && String(input).endsWith(path)
+            ? Promise.resolve(new Response(JSON.stringify({ error: "OOPS", message: "Something went wrong." }), { status: 500 }))
+            : server.handle(input, init),
+        ),
+      );
+    failsFor("/household/notification-preferences");
+    await openSettings();
+    fireEvent.click(await screen.findByRole("switch", { checked: false }));
+
+    fireEvent.click(await screen.findByRole("checkbox", { name: /Chores/ }));
+
+    expect(await screen.findByRole("alert")).toHaveTextContent("Something went wrong.");
+    expect(screen.getByRole("checkbox", { name: /Chores/ })).toBeChecked();
+
+    failsFor("/household/currency");
+    fireEvent.click(screen.getByRole("radio", { name: "USD" }));
+
+    await waitFor(() => expect(screen.getAllByRole("alert")).toHaveLength(2));
+    expect(screen.getByRole("radio", { name: "CHF" })).toBeChecked();
+  });
+
+  it("says why when the kinds can't be loaded", async () => {
+    installFakePush();
+    vi.stubGlobal(
+      "fetch",
+      vi.fn((input: RequestInfo | URL, init?: RequestInit) =>
+        String(input).endsWith("/household/notification-preferences")
+          ? Promise.resolve(new Response(JSON.stringify({ error: "OOPS", message: "Can't load your choices." }), { status: 500 }))
+          : server.handle(input, init),
+      ),
+    );
+    await openSettings();
+
+    fireEvent.click(await screen.findByRole("switch", { checked: false }));
+
+    expect(await screen.findByRole("alert")).toHaveTextContent("Can't load your choices.");
+    expect(screen.queryByRole("checkbox", { name: /Chores/ })).not.toBeInTheDocument();
+  });
+
   it("sends the device again when the server lost it", async () => {
     installFakePush();
     await openSettings();

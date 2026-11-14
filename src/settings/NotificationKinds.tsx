@@ -52,8 +52,13 @@ export function NotificationKinds() {
         <ul className="settings__kinds" aria-label="What to notify me about">
           {KINDS.map(({ key, label, hint }) => (
             <li key={key}>
-              <label className="settings__kind">
-                <input type="checkbox" checked={preferences[key]} onChange={() => toggle(key)} />
+              <label className="settings__kind" htmlFor={`notification-kind-${key}`}>
+                <input
+                  id={`notification-kind-${key}`}
+                  type="checkbox"
+                  checked={preferences[key]}
+                  onChange={() => toggle(key)}
+                />
                 <span className="setting__text">
                   <span className="setting__label">{label}</span>
                   <span className="setting__hint">{hint}</span>
