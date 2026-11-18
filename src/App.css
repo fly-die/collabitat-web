@@ -9,7 +9,6 @@
     calc(var(--space-8) + env(safe-area-inset-bottom));
 }
 
-
 .visually-hidden {
   position: absolute;
   width: 1px;
@@ -1771,126 +1770,7 @@ select.text-input {
   margin-top: var(--space-2);
 }
 
-/* Home: one card per part. A card opens its part; what needs me there sits right under the name,
-   as plain lines so a card never holds boxes inside boxes. */
-
-.home-rows {
-  display: flex;
-  flex-direction: column;
-  gap: var(--space-3);
-  margin-top: var(--space-5);
-}
-
-.home-row {
-  padding: var(--space-1) var(--space-4);
-  border: 1px solid var(--color-line);
-  border-radius: var(--radius-panel);
-  background: var(--color-surface);
-}
-
-.home-row__head {
-  position: relative;
-  display: flex;
-  align-items: center;
-  gap: var(--space-3);
-  min-height: 3rem;
-}
-
-.home-row__icon,
-.home-row__chevron {
-  flex: none;
-  width: 1.5rem;
-  height: 1.5rem;
-  fill: none;
-  stroke: currentColor;
-  stroke-width: 1.8;
-  stroke-linecap: round;
-  stroke-linejoin: round;
-}
-
-.home-row__icon {
-  color: var(--color-accent);
-}
-
-.home-row__chevron {
-  color: var(--color-ink-muted);
-  transition: transform var(--motion-quick) var(--ease-out);
-}
-
-.home-row__head:hover .home-row__chevron {
-  transform: translateX(0.125rem);
-}
-
-.home-row__open {
-  flex: 1;
-  padding: 0;
-  border: 0;
-  background: transparent;
-  color: var(--color-ink);
-  font: inherit;
-  font-size: 1.25rem;
-  font-weight: 700;
-  text-align: left;
-  cursor: pointer;
-}
-
-/* The short button covers the whole header, so the row is one big target. */
-.home-row__open::after {
-  position: absolute;
-  inset: 0;
-  border-radius: var(--radius);
-  content: "";
-}
-
-.home-row__open:focus-visible {
-  outline: none;
-}
-
-.home-row__open:focus-visible::after {
-  outline: 2px solid var(--color-accent);
-}
-
-.home-row__status {
-  padding: 0 0 var(--space-3) calc(1.5rem + var(--space-3));
-}
-
-.home-row__status:empty {
-  display: none;
-}
-
-.home-row__status .section-title {
-  margin: var(--space-2) 0 0;
-  color: var(--color-ink-muted);
-  font-size: var(--font-size-small);
-  font-weight: 400;
-}
-
-.home-row__status .section-title:has(+ .today__note) {
-  display: none;
-}
-
-.home-row__status .today__note,
-.home-row__status .panel,
-.home-row__status .money-summary {
-  margin: 0;
-  padding: 0;
-  border: 0;
-  border-radius: 0;
-  background: transparent;
-}
-
-.home-row__status .panel__row {
-  padding-right: 0;
-  padding-left: 0;
-}
-
-@media (prefers-reduced-motion: reduce) {
-  .home-row__chevron {
-    transition: none;
-  }
-}
-
-/* Computers: Home uses the whole window. The date and Settings span it, the cards sit two by two,
+/* Computers: Home uses the whole window. The date and Settings span it,
    and setup help keeps the right side while there is any. */
 @media (min-width: 56rem) {
   .household {
@@ -1921,16 +1801,6 @@ select.text-input {
     padding-top: var(--space-5);
   }
 
-  /* Cards sit two by two and match their neighbour's height; the notes card runs along the bottom. */
-  .home-rows {
-    display: grid;
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-  }
-
-  .home-row--wide {
-    grid-column: 1 / -1;
-  }
-
   /* Money, Chores and Meals use the whole window too. */
   .money,
   .app .screen.chores,
@@ -1938,40 +1808,50 @@ select.text-input {
     max-width: none;
   }
 
+  /* Two columns that start at the same height: Due next to Later, the week next to the shopping list. */
   .chores,
   .meals {
-    columns: 2;
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    align-items: start;
     column-gap: 4rem;
   }
 
   .chores > *,
   .meals > * {
-    break-inside: avoid;
+    grid-column: 1 / -1;
   }
 
-  /* The week switch stays above the week it switches, in the left column. */
-  .chores > :not(.chores__group),
-  .meals > :not(.chores__group, .past-meals, .meals__week, .meals__weeks) {
-    column-span: all;
+  .chores > .chores__group {
+    grid-column: auto;
   }
 
   .chores > .money__add {
     width: auto;
     min-width: 20rem;
+    justify-self: start;
   }
 
-  .chores > .chores__group .section-title:first-child,
-  .meals > .meals__week + .chores__group .section-title {
-    margin-top: 0;
+  .chores > .chores__group .section-title {
+    margin-top: var(--space-6);
   }
 
-  .meals > .meals__week {
-    break-after: column;
-  }
-
-  /* The small label above already says Tonight. */
-  .tonight__when {
+  /* Meals: the week with the recipes under it on the left, the shopping list along the right. */
+  .meals > .meals__parts {
     display: none;
+  }
+
+  .meals > .meals__column {
+    grid-column: 1;
+  }
+
+  .meals > .meals__part--shopping {
+    grid-column: 2;
+    margin-top: var(--space-4);
+  }
+
+  .meals__part--shopping .section-title {
+    margin-top: 0;
   }
 }
 
@@ -1983,72 +1863,8 @@ select.text-input {
   margin-top: var(--space-3);
 }
 
-/* Notes as a card on Home: the heading reads like the other card names, the list loses its own box. */
-.home-row .notes .section-title {
-  display: flex;
-  align-items: center;
-  min-height: 3rem;
-  margin: 0;
-  font-size: 1.25rem;
-}
-
-.home-row .notes {
-  padding-bottom: var(--space-3);
-}
-
-.home-row .notes .panel {
-  border: 0;
-  border-radius: 0;
-  background: transparent;
-}
-
-/* A card shows the first thing that needs me; the rest is one tap away in its part. */
-.home-row__status .panel__row:nth-child(n + 2),
-.home-row__status .panel + .today__note {
-  display: none;
-}
-
-/* Only a real pointer hovers. A phone keeps the hover style on the last row tapped, which looked stuck. */
-.home-row__status .chore__open:hover,
-.home-row__status .chore__open:active {
-  background: transparent;
-}
-
-@media (hover: hover) {
-  .home-row__status .chore__open:hover {
-    border-radius: var(--radius);
-    background: var(--color-accent-tint);
-  }
-}
-
 /* Phones: every Home card is one size, a name and one line. */
-@media (max-width: 55.99rem) {
-  .home-row:not(.home-row--wide) {
-    min-height: 7.25rem;
-  }
-
-  .home-row__status .section-title {
-    display: none;
-  }
-}
-
-.home-row__status .panel__row {
-  border-bottom: 0;
-}
-
-.home-row .notes .today__note {
-  padding: var(--space-2) 0 0;
-  border: 0;
-  background: transparent;
-}
-
 /* Computers: the other cards have a small label above their entry, so the money line starts one label lower. */
-@media (min-width: 56rem) {
-  .home-row__status .money-summary {
-    margin-top: 1.75rem;
-  }
-}
-
 /* The kinds of notifications: a ticked row each, under the main switch. */
 .settings__kinds {
   margin: var(--space-2) 0 0;
@@ -2071,4 +1887,513 @@ select.text-input {
   width: 1.375rem;
   height: 1.375rem;
   accent-color: var(--color-accent);
+}
+
+/* People: a flatmate's initial on their own color. The initial comes from CSS, so it never doubles the name next to it. */
+.avatar {
+  display: inline-flex;
+  flex: none;
+  align-items: center;
+  justify-content: center;
+  width: 2.25rem;
+  height: 2.25rem;
+  border-radius: 50%;
+  font-size: var(--font-size-small);
+  font-weight: 700;
+  line-height: 1;
+}
+
+.avatar::before {
+  content: attr(data-initial);
+}
+
+.avatar--small {
+  width: 1.25rem;
+  height: 1.25rem;
+  font-size: 0.6875rem;
+}
+
+.avatar--1 {
+  background: var(--color-member-1);
+  color: var(--color-on-member-1);
+}
+
+.avatar--2 {
+  background: var(--color-member-2);
+  color: var(--color-on-member-2);
+}
+
+.avatar--3 {
+  background: var(--color-member-3);
+  color: var(--color-on-member-3);
+}
+
+.avatar--4 {
+  background: var(--color-member-4);
+  color: var(--color-on-member-4);
+}
+
+.avatar--5 {
+  background: var(--color-member-5);
+  color: var(--color-on-member-5);
+}
+
+.avatar--6 {
+  background: var(--color-member-6);
+  color: var(--color-on-member-6);
+}
+
+.with-avatar {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.375rem;
+}
+
+/* Who pays whom: the two faces overlap, the ring keeps them apart. */
+.avatar-pair {
+  display: inline-flex;
+  flex: none;
+}
+
+.avatar-pair .avatar + .avatar {
+  margin-left: calc(-1 * var(--space-2));
+  box-shadow: 0 0 0 2px var(--color-surface);
+}
+
+.meals__past .avatar {
+  opacity: 0.5;
+}
+
+/* Home: my day in one block in the brand green, then what the flat has going on as plain cards. */
+.home {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-6);
+  margin-top: var(--space-5);
+}
+
+.your-day {
+  display: flex;
+  flex-direction: column;
+  padding: var(--space-1) var(--space-5);
+  border-radius: 1.125rem;
+  background: var(--color-brand);
+  color: var(--color-on-brand);
+}
+
+.your-day:empty {
+  display: none;
+}
+
+.your-day > section {
+  padding: var(--space-4) 0;
+}
+
+/* An undo bar or an error may sit between two parts, so the line goes by order, not by neighbor. */
+.your-day > section ~ section {
+  border-top: 1px solid var(--color-on-brand-line);
+}
+
+.your-day .section-title {
+  margin: 0 0 var(--space-1);
+  color: var(--color-on-brand-muted);
+  font-size: var(--font-size-small);
+}
+
+.your-day .panel,
+.your-day .today__note,
+.your-day .money-summary {
+  margin: 0;
+  padding: 0;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  color: inherit;
+}
+
+.your-day .today__note {
+  color: var(--color-on-brand-muted);
+}
+
+.your-day .panel__row {
+  min-height: 3rem;
+  padding: 0;
+  border-bottom: 0;
+}
+
+.your-day .chore__open,
+.your-day .chore__open:hover,
+.your-day .chore__open:active {
+  min-height: 3rem;
+  margin: 0;
+  padding: var(--space-1) 0;
+  background: transparent;
+}
+
+.your-day .chore__title,
+.your-day .money-summary {
+  font-size: 1.25rem;
+  line-height: 1.25;
+}
+
+.your-day .chore__meta,
+.your-day .chore__turn--mine {
+  color: var(--color-on-brand-muted);
+}
+
+.your-day .chore__due--overdue {
+  color: var(--color-on-brand);
+}
+
+.your-day .item-icon {
+  background: var(--color-on-brand-tint);
+  color: var(--color-on-brand);
+}
+
+/* Everything in the block is mine or tonight's, so the faces would only repeat that. */
+.your-day .avatar,
+.tonight__when {
+  display: none;
+}
+
+.your-day .chore__done,
+.your-day .chore__done--mine {
+  border-color: var(--color-on-brand);
+  background: var(--color-on-brand);
+  color: var(--color-brand);
+}
+
+.your-day .link-button,
+.your-day .money-summary__action {
+  color: var(--color-on-brand);
+  text-decoration: underline;
+  text-underline-offset: 0.2em;
+}
+
+.your-day .money-summary {
+  min-height: 3rem;
+}
+
+.your-day .form-error {
+  color: var(--color-on-brand);
+  font-weight: 700;
+}
+
+.your-day :focus-visible {
+  outline-color: var(--color-on-brand);
+}
+
+.home__cards {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-6);
+}
+
+.home__slot:empty {
+  display: none;
+}
+
+.home__cards .section-title {
+  margin-top: 0;
+}
+
+.home__cards .panel + .today__note {
+  margin-top: var(--space-2);
+  padding: 0;
+  border: 0;
+  background: transparent;
+}
+
+.chore__nudge {
+  flex: none;
+  padding: 0 var(--space-3);
+  color: var(--color-accent);
+  font-size: var(--font-size-small);
+  font-weight: 700;
+}
+
+/* Money: where I stand as one figure, then everyone's balance as bars around a middle line. */
+.money-headline__figure {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  margin: 0;
+  color: var(--color-accent);
+  font-size: clamp(3rem, 15vw, 4.5rem);
+  font-weight: 700;
+  line-height: 1;
+  letter-spacing: -0.03em;
+}
+
+.money-headline--owe .money-headline__figure {
+  color: var(--color-owe);
+}
+
+.money-headline__currency {
+  margin-left: var(--space-2);
+  color: var(--color-ink-muted);
+  font-size: 1.125rem;
+  letter-spacing: 0;
+}
+
+.money-headline__words {
+  margin: var(--space-2) 0 0;
+  color: var(--color-ink-muted);
+  font-size: var(--font-size-body);
+  font-weight: 400;
+}
+
+.balance {
+  padding-right: var(--space-4);
+}
+
+.balance__name {
+  flex: none;
+  width: 4.5rem;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.balance__track {
+  position: relative;
+  flex: 1;
+  height: 0.625rem;
+}
+
+.balance__track::before {
+  position: absolute;
+  top: -0.375rem;
+  bottom: -0.375rem;
+  left: calc(50% - 1px);
+  width: 2px;
+  background: var(--color-line);
+  content: "";
+}
+
+.balance__bar {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+}
+
+.balance__track--back .balance__bar {
+  left: 50%;
+  border-radius: 0 999px 999px 0;
+  background: var(--color-accent);
+}
+
+.balance__track--owe .balance__bar {
+  right: 50%;
+  border-radius: 999px 0 0 999px;
+  background: var(--color-owe);
+}
+
+.balance__amount {
+  flex: none;
+  min-width: 4.5rem;
+  text-align: right;
+}
+
+.balance__amount--back {
+  color: var(--color-accent);
+}
+
+.balance__amount--owe {
+  color: var(--color-owe);
+}
+
+.history-head {
+  display: none;
+}
+
+/* Meals: today's row carries the brand green, so tonight's dinner is the first thing read. */
+.meals__today,
+.meals__today .chore__open:hover,
+.meals__today .chore__open:active {
+  background: var(--color-brand);
+  color: var(--color-on-brand);
+}
+
+.meals__today .chore__title,
+.meals__today .meals__empty {
+  font-size: 1.25rem;
+  line-height: 1.25;
+}
+
+.meals__today .meals__day,
+.meals__today .meals__empty,
+.meals__today .chore__meta {
+  color: var(--color-on-brand-muted);
+}
+
+.meals__today .item-icon {
+  background: var(--color-on-brand-tint);
+  color: var(--color-on-brand);
+}
+
+.meals__today .avatar {
+  box-shadow: 0 0 0 1.5px var(--color-on-brand-muted);
+}
+
+.meals__today .chore__open:focus-visible {
+  outline-color: var(--color-on-brand);
+}
+
+/* The parts of Meals read as tabs, so they don't look like the week switch right under them. */
+.meals__parts {
+  gap: var(--space-5);
+  margin-top: var(--space-4);
+  padding: 0;
+  border: 0;
+  border-bottom: 1px solid var(--color-line);
+  border-radius: 0;
+  background: transparent;
+}
+
+.meals__parts .segmented__option {
+  flex: none;
+  border-radius: 0;
+}
+
+.meals__parts .segmented__option:has(input:checked) {
+  background: transparent;
+  box-shadow: inset 0 -3px 0 var(--color-accent);
+}
+
+.meals .meals__weeks {
+  margin-top: var(--space-4);
+}
+
+/* Phones: one part of Meals at a time, each starting right under the tabs. */
+@media (max-width: 55.99rem) {
+  .meals__part--away {
+    display: none;
+  }
+
+  .meals__part .section-title {
+    margin-top: var(--space-5);
+  }
+}
+
+@media (min-width: 56rem) {
+  .home {
+    gap: var(--space-8);
+  }
+
+  .home__cards {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(18rem, 1fr));
+    align-items: start;
+    column-gap: var(--space-8);
+  }
+
+  .money {
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1.5fr);
+    column-gap: 3rem;
+  }
+}
+
+/* Narrower than a wide window, the sentence needs the room; the balances above already show the faces. */
+@media (max-width: 71.99rem) {
+  .avatar-pair {
+    display: none;
+  }
+}
+
+/* Wide windows: my day side by side, and the history as a table with one line per expense. */
+@media (min-width: 72rem) {
+  /* With the whole width to itself, the block lays my day out side by side. */
+  .household:has(> .household__aside:empty) .your-day {
+    flex-direction: row;
+    padding: var(--space-3) var(--space-6);
+  }
+
+  .household:has(> .household__aside:empty) .your-day > section {
+    flex: 1 1 0;
+    min-width: 0;
+    padding: var(--space-4) var(--space-6);
+  }
+
+  .household:has(> .household__aside:empty) .your-day > section:first-child {
+    padding-left: 0;
+  }
+
+  .household:has(> .household__aside:empty) .your-day > section:last-child {
+    padding-right: 0;
+  }
+
+  .household:has(> .household__aside:empty) .your-day > section ~ section {
+    border-top: 0;
+    border-left: 1px solid var(--color-on-brand-line);
+  }
+
+  /* The history reads as a table under shared column names. */
+  .money__history .history-head,
+  .money__history .expense__open,
+  .money__history .expense--payment {
+    display: grid;
+    grid-template-columns: 2.25rem minmax(0, 2fr) minmax(0, 1.3fr) minmax(0, 1.1fr) minmax(0, 1fr) minmax(0, 0.9fr);
+    align-items: center;
+    column-gap: var(--space-3);
+  }
+
+  .money__history .history-head {
+    padding: var(--space-3) var(--space-4);
+    border-bottom: 1px solid var(--color-line);
+    color: var(--color-ink-muted);
+    font-size: var(--font-size-small);
+    font-weight: 700;
+  }
+
+  .history-head > :first-child {
+    grid-column: 1 / span 2;
+  }
+
+  .history-head > :nth-child(n + 4),
+  .money__history .expense__share,
+  .money__history .expense__amount {
+    justify-self: end;
+    text-align: right;
+  }
+
+  .money__history .expense--payment {
+    padding-right: var(--space-4);
+  }
+
+  .money__history .expense__text,
+  .money__history .expense__meta {
+    display: contents;
+  }
+
+  .money__history .expense__description {
+    grid-column: 2;
+  }
+
+  .money__history .expense__payer {
+    grid-column: 3;
+  }
+
+  .money__history .expense__day {
+    grid-column: 4;
+  }
+
+  .money__history .expense__share {
+    grid-column: 5;
+  }
+
+  .money__history .expense__amount {
+    grid-column: 6;
+  }
+
+  .money__history .expense__delete {
+    grid-row: 1;
+    grid-column: 5;
+    justify-self: end;
+  }
+
+  /* The column names already say these words. */
+  .money__history .expense__label {
+    display: none;
+  }
 }
