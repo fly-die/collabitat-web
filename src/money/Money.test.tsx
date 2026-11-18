@@ -64,6 +64,7 @@ describe("money", () => {
     await addExpense("Groceries", "45,50");
 
     expect(heading()).toHaveTextContent("Lea owes you 22.75");
+    expect(rowsOf("Balances")).toEqual(["You+22.75", "Lea\u221222.75"]);
     expect(rowsOf("Settle up")).toEqual(["Lea owes you 22.75Mark paid"]);
     expect(rowsOf("History")).toEqual(["GroceriesYou paidTodayYour share 22.7545.50"]);
   });

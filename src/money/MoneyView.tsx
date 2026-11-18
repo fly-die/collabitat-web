@@ -1,7 +1,8 @@
 import { useEffect, useState, type ReactNode } from "react";
 import type { ApiError } from "../api/client";
-import type { Expense, Money, NewExpense, NewSettlement, Settlement, Transfer } from "../api/expenses-api";
+import type { Balance, Expense, Money, NewExpense, NewSettlement, Settlement, Transfer } from "../api/expenses-api";
 import type { Household } from "../api/households-api";
+import { Avatar } from "../components/Avatar";
 import { CountUpAmount } from "../components/CountUpAmount";
 import { UndoBar } from "../components/UndoBar";
 import { useUndoable, type Undoable } from "../components/useUndoable";
@@ -173,20 +174,75 @@ export function MoneyView({ household }: MoneyViewProps) {
   );
 }
 
+const MINUS_SIGN = "\u2212";
+
 interface HeadlineProps {
   transfers: Transfer[];
   me: string;
   nameOf: NameOf;
+  currency: string;
   startFromCents?: number;
 }
 
-function Headline({ transfers, me, nameOf, startFromCents }: HeadlineProps) {
+// Where I stand as one big number, green when I get money back, with the sentence that names who.
+function Headline({ transfers, me, nameOf, currency, startFromCents }: HeadlineProps) {
   const { isOwing, prefix, cents } = myBalance(transfers, me, nameOf);
+  if (cents === undefined) {
+    return <h1 className="page-title page-title--large">{prefix}</h1>;
+  }
   return (
-    <h1 className={`page-title page-title--large${isOwing ? " page-title--owe" : ""}`}>
-      {prefix}
-      {cents !== undefined && <CountUpAmount cents={cents} startFromCents={startFromCents} />}
-    </h1>
+    <div className={`money-headline${isOwing ? " money-headline--owe" : ""}`}>
+      {/* The sentence below says the same in words, so the figure is for the eye only. */}
+      <p className="money-headline__figure" aria-hidden="true">
+        {isOwing ? MINUS_SIGN : "+"}
+        <CountUpAmount cents={cents} startFromCents={startFromCents} />
+        <span className="money-headline__currency">{currency}</span>
+      </p>
+      <h1 className="money-headline__words">
+        {prefix}
+        {formatAmount(cents)}
+      </h1>
+    </div>
+  );
+}
+
+// The largest balance fills its half of the track, from the middle line outwards.
+const HALF_TRACK_PERCENT = 50;
+
+interface BalancesProps {
+  household: Household;
+  balances: Balance[];
+  nameOf: NameOf;
+}
+
+// Everyone's balance side by side: bars to the right get money back, bars to the left owe.
+function Balances({ household, balances, nameOf }: BalancesProps) {
+  const largestCents = Math.max(...balances.map((balance) => Math.abs(balance.balanceCents)));
+  return (
+    <section aria-labelledby="balances-heading">
+      <h2 id="balances-heading" className="section-title">
+        Balances
+      </h2>
+      <ul className="panel balances" aria-labelledby="balances-heading">
+        {balances.map(({ memberId, balanceCents }) => {
+          const direction = balanceCents < 0 ? "owe" : "back";
+          const sign = balanceCents < 0 ? MINUS_SIGN : balanceCents > 0 ? "+" : "";
+          return (
+            <li key={memberId} className="panel__row balance">
+              <Avatar household={household} memberId={memberId} />
+              <span className="balance__name">{nameOf(memberId)}</span>
+              <span className={`balance__track balance__track--${direction}`} aria-hidden="true">
+                <span className="balance__bar" style={{ width: `${(Math.abs(balanceCents) / largestCents) * HALF_TRACK_PERCENT}%` }} />
+              </span>
+              <span className={`balance__amount balance__amount--${direction}`}>
+                {sign}
+                {formatAmount(Math.abs(balanceCents))}
+              </span>
+            </li>
+          );
+        })}
+      </ul>
+    </section>
   );
 }
 
@@ -280,9 +336,18 @@ function MoneyOverview({
           <span className="expense__text">
             <span className="expense__description">{expense.description}</span>
             <span className="expense__meta">
-              <span>{nameOf(expense.paidByMemberId)} paid</span>
-              <span>{formatDay(expense.spentOn)}</span>
-              {myShare && <span>Your share {formatAmount(myShare.amountCents)}</span>}
+              <span className="expense__payer with-avatar">
+                <Avatar household={household} memberId={expense.paidByMemberId} size="small" />
+                {nameOf(expense.paidByMemberId)}
+                <span className="expense__label"> paid</span>
+              </span>
+              <span className="expense__day">{formatDay(expense.spentOn)}</span>
+              {myShare && (
+                <span className="expense__share">
+                  <span className="expense__label">Your share </span>
+                  {formatAmount(myShare.amountCents)}
+                </span>
+              )}
             </span>
           </span>
           <span className="expense__amount">{formatAmount(expense.amountCents)}</span>
@@ -299,8 +364,8 @@ function MoneyOverview({
         <span className="expense__text">
           <span className="expense__description">{title}</span>
           <span className="expense__meta">
-            <span>Payment</span>
-            <span>{formatDay(settlement.settledOn)}</span>
+            <span className="expense__payer">Payment</span>
+            <span className="expense__day">{formatDay(settlement.settledOn)}</span>
           </span>
         </span>
         <span className="expense__amount">{formatAmount(settlement.amountCents)}</span>
@@ -322,7 +387,7 @@ function MoneyOverview({
   return (
     <div className="screen money" inert={isBehindSheet} aria-hidden={isBehindSheet || undefined}>
       <p className="eyebrow">Money</p>
-      <Headline transfers={money.transfers} me={me} nameOf={nameOf} startFromCents={headlineStartCents} />
+      <Headline transfers={money.transfers} me={me} nameOf={nameOf} currency={household.currency} startFromCents={headlineStartCents} />
       {isHouseholdSquare && <p className="hint money__square">Everyone in {household.name} is square.</p>}
 
       <button className="button button--block money__add" type="button" onClick={onStartAdding}>
@@ -332,6 +397,10 @@ function MoneyOverview({
         <p className="form-error" role="alert">
           {error}
         </p>
+      )}
+
+      {money.balances.some((balance) => balance.balanceCents !== 0) && (
+        <Balances household={household} balances={money.balances} nameOf={nameOf} />
       )}
 
       {money.transfers.length > 0 && (
@@ -347,6 +416,10 @@ function MoneyOverview({
                   key={`${transfer.fromMemberId}-${transfer.toMemberId}`}
                   className={`panel__row transfer${isMine ? " panel__row--owe" : ""}`}
                 >
+                  <span className="avatar-pair">
+                    <Avatar household={household} memberId={transfer.fromMemberId} />
+                    <Avatar household={household} memberId={transfer.toMemberId} />
+                  </span>
                   <span className="transfer__text">{describeTransfer(transfer, me, nameOf)}</span>
                   <button
                     className={`button transfer__action${isMine ? "" : " button--outline"}`}
@@ -370,6 +443,14 @@ function MoneyOverview({
           <p className="empty-state">No expenses yet.</p>
         ) : (
           <ul className="panel" aria-labelledby="history-heading">
+            {/* Column names for the wide layout, where each row reads as a table line. */}
+            <li className="history-head" aria-hidden="true">
+              <span>What</span>
+              <span>Paid by</span>
+              <span>When</span>
+              <span>Your share</span>
+              <span>Total</span>
+            </li>
             {history.map(historyRow)}
           </ul>
         )}
