@@ -14,6 +14,23 @@
   --color-on-brand: #ffffff;
   --color-backdrop: rgb(23 32 28 / 45%);
   --color-shadow: rgb(23 32 28 / 25%);
+  /* One color per flatmate, in the order they joined; each pair keeps the initial readable. */
+  --color-member-1: #1e4d3b;
+  --color-on-member-1: #ffffff;
+  --color-member-2: #6b3f6e;
+  --color-on-member-2: #ffffff;
+  --color-member-3: #2f5d8c;
+  --color-on-member-3: #ffffff;
+  --color-member-4: #e0b04a;
+  --color-on-member-4: #17201c;
+  --color-member-5: #8fc7c0;
+  --color-on-member-5: #17201c;
+  --color-member-6: #4a4f57;
+  --color-on-member-6: #ffffff;
+  /* Text and lines on the brand green. */
+  --color-on-brand-muted: #cfe0d8;
+  --color-on-brand-line: rgb(255 255 255 / 18%);
+  --color-on-brand-tint: rgb(255 255 255 / 14%);
   color-scheme: light;
   --motion-quick: 120ms;
   --motion-calm: 220ms;
@@ -55,5 +72,17 @@
   --color-accent-tint: #1e2e29;
   --color-backdrop: rgb(0 0 0 / 60%);
   --color-shadow: rgb(0 0 0 / 50%);
+  --color-member-1: #7dbfa4;
+  --color-on-member-1: #111214;
+  --color-member-2: #c79bd0;
+  --color-on-member-2: #111214;
+  --color-member-3: #8fb8e6;
+  --color-on-member-3: #111214;
+  --color-member-4: #e0b04a;
+  --color-on-member-4: #111214;
+  --color-member-5: #8fc7c0;
+  --color-on-member-5: #111214;
+  --color-member-6: #b8bcc4;
+  --color-on-member-6: #111214;
   color-scheme: dark;
 }
