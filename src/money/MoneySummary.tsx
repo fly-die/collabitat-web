@@ -22,7 +22,7 @@ export function MoneySummary({ household, onOpenMoney }: MoneySummaryProps) {
 
   return (
     <section className="today" aria-labelledby="money-summary-heading">
-      <h2 id="money-summary-heading" className="visually-hidden">
+      <h2 id="money-summary-heading" className="section-title">
         Money
       </h2>
       <button

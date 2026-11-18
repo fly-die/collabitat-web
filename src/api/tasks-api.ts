@@ -40,6 +40,8 @@ export const tasksApi = {
   remove: (taskId: string) => request<Tasks>(taskPath(taskId), { method: "DELETE" }),
   markDone: (taskId: string, doneOn: string) =>
     request<Tasks>(`${taskPath(taskId)}/completions`, { method: "POST", body: JSON.stringify({ doneOn }) }),
+  // Sends whoever's turn it is a reminder on their devices.
+  nudge: (taskId: string) => request<void>(`${taskPath(taskId)}/nudges`, { method: "POST" }),
   undoDone: (taskId: string, completionId: string) =>
     request<Tasks>(
       `${taskPath(taskId)}/completions/${safeId(completionId, COMPLETION_NOT_FOUND_CODE, "That was already undone.")}`,

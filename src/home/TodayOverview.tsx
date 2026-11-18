@@ -8,6 +8,7 @@ import { useUndoable } from "../components/useUndoable";
 import { ChoreRow } from "../chores/ChoreRow";
 import { daysUntil } from "../chores/chore-format";
 import { useChores } from "../chores/useChores";
+import { AroundTheFlat } from "./AroundTheFlat";
 import { ComingUp } from "./ComingUp";
 
 const COMING_UP_WITHIN_DAYS = 7;
@@ -17,13 +18,15 @@ interface TodayOverviewProps {
   household: Household;
   onOpenChores: () => void;
   onOpenCalendar: () => void;
-  // Where Home shows what's coming up: under its Calendar row, not under today's chores.
+  // Flatmates' due chores and what's coming up are cards of their own on Home, outside the block for my day.
+  aroundSlot: HTMLElement | null;
   comingUpSlot: HTMLElement | null;
 }
 
-// The top of Home: what needs doing today (my turns first), then the next week's chores and dates.
+// The top of Home: what I need to do today. Flatmates' due chores and the next week's chores and dates
+// go to their own cards.
 // While chores load or the server is unreachable it stays out of the way; the Chores tab explains.
-export function TodayOverview({ household, onOpenChores, onOpenCalendar, comingUpSlot }: TodayOverviewProps) {
+export function TodayOverview({ household, onOpenChores, onOpenCalendar, aroundSlot, comingUpSlot }: TodayOverviewProps) {
   const { state, completeChore } = useChores();
   const { undoable, offerUndo, takeUndo, dismissUndo } = useUndoable();
   const [error, setError] = useState<string>();
@@ -42,10 +45,13 @@ export function TodayOverview({ household, onOpenChores, onOpenCalendar, comingU
   }
 
   const me = household.currentMemberId;
-  const isMine = (task: Task) => task.turnMemberId === me;
-  const due = state.tasks
-    .filter((task) => daysUntil(task.nextDueOn) <= 0)
-    .sort((first, second) => Number(isMine(second)) - Number(isMine(first)));
+  // A chore without turns is everyone's, so it counts as mine too.
+  const isSomeoneElses = (task: Task) => task.turnMemberId !== null && task.turnMemberId !== me;
+  const allDue = state.tasks.filter((task) => daysUntil(task.nextDueOn) <= 0);
+  const due = allDue.filter((task) => !isSomeoneElses(task));
+  const aroundSection =
+    aroundSlot &&
+    createPortal(<AroundTheFlat household={household} chores={allDue.filter(isSomeoneElses)} onOpenChores={onOpenChores} />, aroundSlot);
   const comingUp = state.tasks
     .filter((task) => {
       const days = daysUntil(task.nextDueOn);
@@ -107,6 +113,7 @@ export function TodayOverview({ household, onOpenChores, onOpenCalendar, comingU
         )}
       </section>
 
+      {aroundSection}
       {comingUpSection}
 
       {undoable && (

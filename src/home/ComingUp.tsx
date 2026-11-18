@@ -40,8 +40,7 @@ export function ComingUp({ household, chores, onOpenChores, onOpenCalendar }: Co
       row: (
         <li key={`date-${entry.id}`} className="panel__row chore">
           <button className="chore__open" type="button" onClick={onOpenCalendar}>
-            {/* The card already carries the calendar icon, so a date only gets one that says more. */}
-            {iconFor(entry.title, "calendar") !== "calendar" && <ItemIcon name={iconFor(entry.title, "calendar")} />}
+            <ItemIcon name={iconFor(entry.title, "calendar")} />
             <span className="chore__text">
               <span className="chore__title">
                 {describeUpcomingDay(entry.day, today)}: {entry.title}

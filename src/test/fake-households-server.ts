@@ -557,6 +557,9 @@ export function createFakeHouseholdsServer({ pushPublicKey }: { pushPublicKey?: 
         Object.assign(task, { ...body, title: body.title.trim() });
         return json(200, tasksOf(household));
       }
+      if (task && method === "POST" && segments[3] === "nudges") {
+        return new Response(null, { status: 204 });
+      }
       if (task && method === "POST") {
         task.completions.push({ id: crypto.randomUUID(), doneOn: body.doneOn, memberId: currentMemberId });
         return json(201, tasksOf(household));

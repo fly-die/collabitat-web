@@ -29,8 +29,7 @@ export function TonightDinner({ household, onOpenMeals }: TonightDinnerProps) {
         <ul className="panel" aria-label="Tonight's dinner">
           <li className="panel__row chore">
             <button className="chore__open" type="button" onClick={onOpenMeals}>
-              {/* The card already carries the plain meal icon, so a dish only gets one that says more. */}
-              {iconFor(tonight.title, "food") !== "food" && <ItemIcon name={iconFor(tonight.title, "food")} />}
+              <ItemIcon name={iconFor(tonight.title, "food")} />
               <span className="chore__text">
                 <span className="chore__title">{tonight.title}</span>
                 <span className="chore__meta">

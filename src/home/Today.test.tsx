@@ -69,4 +69,28 @@ describe("today on Home", () => {
     fireEvent.click(screen.getByRole("button", { name: "Undo" }));
     expect(await screen.findByRole("button", { name: "Mark Take out the trash done" })).toBeInTheDocument();
   });
+
+  it("keeps a flatmate's due chore out of my day and lets me nudge them", async () => {
+    await openHome();
+    fireEvent.click(screen.getByRole("button", { name: "+ Add a flatmate" }));
+    type("New flatmate's name", "Lea");
+    fireEvent.click(screen.getByRole("button", { name: "Add" }));
+    await screen.findByRole("button", { name: "Remove Lea" });
+
+    fireEvent.click(screen.getByRole("button", { name: "Chores" }));
+    fireEvent.click(await screen.findByRole("button", { name: "Add a chore" }));
+    type("What needs doing?", "Clean the bathroom");
+    fireEvent.click(screen.getByRole("checkbox", { name: "You" }));
+    fireEvent.click(screen.getByRole("button", { name: "Add chore" }));
+    await screen.findByText("Lea's turn");
+    fireEvent.click(screen.getByRole("button", { name: "Home" }));
+
+    expect(await screen.findByRole("list", { name: "Around the flat" })).toBeInTheDocument();
+    expect(rowsOf("Around the flat")).toEqual(["Clean the bathroomLea's turnDue todayNudge"]);
+    expect(screen.getByText("Nothing due today.")).toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole("button", { name: "Nudge Lea about Clean the bathroom" }));
+    expect(await screen.findByRole("button", { name: "Nudge Lea about Clean the bathroom" })).toHaveTextContent("Nudged");
+    expect(screen.getByRole("button", { name: "Nudge Lea about Clean the bathroom" })).toBeDisabled();
+  });
 });
