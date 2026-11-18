@@ -1,11 +1,14 @@
 import { useState, type ReactNode } from "react";
 import { NewAccountForm } from "../accounts/NewAccountForm";
 import type { Credentials, Household } from "../api/households-api";
+import { Avatar } from "../components/Avatar";
 import { FlatmatesSection } from "./FlatmatesSection";
 import { InviteShareFeedback, useInviteShare } from "./InviteShare";
 
 // From two people on, the flat is set up: who lives here moves to Settings.
 const SET_UP_FROM_MEMBERS = 2;
+// More circles than this would push the date off a phone's first line; in a bigger flat the last one counts the rest.
+const MAX_FACE_CIRCLES = 4;
 
 
 interface HouseholdViewProps {
@@ -45,20 +48,36 @@ export function HouseholdView({
   const openStep = nextStepTitle(household);
   // Decided when Home opens, so the list doesn't vanish while someone is still adding flatmates.
   const [isSettingUp] = useState(() => household.members.length < SET_UP_FROM_MEMBERS);
+  const facesShown =
+    household.members.length > MAX_FACE_CIRCLES ? household.members.slice(0, MAX_FACE_CIRCLES - 1) : household.members;
 
   return (
     <div className="screen household">
       <div className="household__main">
         <div className="household__top">
           <p className="eyebrow">{TODAY_FORMAT.format(new Date())}</p>
-          <button className="button button--outline settings-button" type="button" onClick={onOpenSettings}>
-            <svg className="settings-button__icon" viewBox="0 0 24 24" aria-hidden="true">
-              <path d="M4 7h9M17 7h3M4 17h3M11 17h9" />
-              <circle cx="15" cy="7" r="2" />
-              <circle cx="9" cy="17" r="2" />
-            </svg>
-            Settings
-          </button>
+          <div className="household__people">
+            {household.members.length >= SET_UP_FROM_MEMBERS && (
+              <button className="faces" type="button" aria-label="Flatmates" onClick={onOpenSettings}>
+                {facesShown.map((member) => (
+                  <Avatar key={member.id} household={household} memberId={member.id} />
+                ))}
+                {facesShown.length < household.members.length && (
+                  <span className="faces__more" aria-hidden="true">
+                    +{household.members.length - facesShown.length}
+                  </span>
+                )}
+              </button>
+            )}
+            <button className="button button--outline settings-button" type="button" onClick={onOpenSettings}>
+              <svg className="settings-button__icon" viewBox="0 0 24 24" aria-hidden="true">
+                <path d="M4 7h9M17 7h3M4 17h3M11 17h9" />
+                <circle cx="15" cy="7" r="2" />
+                <circle cx="9" cy="17" r="2" />
+              </svg>
+              <span className="settings-button__label">Settings</span>
+            </button>
+          </div>
         </div>
         <h1 className="page-title page-title--large">{household.name}</h1>
         {summary}

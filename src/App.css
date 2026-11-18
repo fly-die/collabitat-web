@@ -2397,3 +2397,69 @@ select.text-input {
     display: none;
   }
 }
+
+/* Home: who lives here, as faces next to Settings. They open Settings, where the flatmates are. */
+.household__people {
+  display: flex;
+  flex: none;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.faces {
+  display: inline-flex;
+  align-items: center;
+  min-height: var(--touch-target);
+  padding: 0;
+  border: 0;
+  border-radius: 999px;
+  background: transparent;
+  cursor: pointer;
+}
+
+.faces .avatar,
+.faces__more {
+  width: 2rem;
+  height: 2rem;
+  box-shadow: 0 0 0 2px var(--color-canvas);
+}
+
+.faces > * + * {
+  margin-left: calc(-1 * var(--space-2));
+}
+
+.faces__more {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  background: var(--color-done);
+  color: var(--color-ink);
+  font-size: 0.75rem;
+  font-weight: 700;
+}
+
+/* Phones: the faces need the room, so Settings is its icon alone, and the faces are a little smaller
+   so even "Wednesday 30 September" stays on one line. */
+@media (max-width: 55.99rem) {
+  .faces .avatar,
+  .faces__more {
+    width: 1.75rem;
+    height: 1.75rem;
+  }
+
+  .household__top .settings-button {
+    justify-content: center;
+    width: var(--touch-target);
+    padding: 0;
+  }
+
+  .settings-button__label {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip-path: inset(50%);
+    white-space: nowrap;
+  }
+}
