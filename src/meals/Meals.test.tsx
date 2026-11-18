@@ -297,6 +297,7 @@ describe("meals", () => {
     fireEvent.click(screen.getByRole("button", { name: "Add to shopping list" }));
 
     expect(await screen.findByRole("status")).toHaveTextContent("Curry added to the shopping list.");
+    expect(screen.getByRole("radio", { name: "Shopping" })).toBeChecked();
     expect(await screen.findByRole("checkbox", { name: "Reis" })).toBeInTheDocument();
     expect(screen.getByRole("checkbox", { name: "Kokosmilch" })).toBeInTheDocument();
     fireEvent.click(screen.getByRole("button", { name: "Undo" }));

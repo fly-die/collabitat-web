@@ -2,6 +2,7 @@ import { useId, useState, type FormEvent, type ReactNode } from "react";
 import type { ApiError } from "../api/client";
 import type { Household } from "../api/households-api";
 import { mealsApi, type MealPlan, type MealSlot, type NewRecipe, type PlannedMeal, type Recipe } from "../api/meals-api";
+import { Avatar } from "../components/Avatar";
 import { ItemIcon, iconFor } from "../components/item-icons";
 import { Sheet } from "../components/Sheet";
 import { UndoBar } from "../components/UndoBar";
@@ -30,10 +31,17 @@ const asNewRecipe = ({ title, servings, ingredients }: Recipe) => ({ title, serv
 
 interface MealsViewProps {
   household: Household;
+  // Coming from a shopping trip on Home, Meals opens on the list instead of the week.
+  startOnShopping?: boolean;
 }
 
 const SLOT_NAMES: Record<MealSlot, string> = { breakfast: "Breakfast", lunch: "Lunch", dinner: "Dinner" };
 const SLOTS: MealSlot[] = ["breakfast", "lunch", "dinner"];
+
+// On a phone Meals shows one part at a time, so the shopping list and the recipes are a tap away instead of a scroll.
+type MealsPart = "plan" | "shopping" | "recipes";
+const PART_NAMES: Record<MealsPart, string> = { plan: "Plan", shopping: "Shopping", recipes: "Recipes" };
+const PARTS = Object.keys(PART_NAMES) as MealsPart[];
 
 // "Dinner today", "Breakfast yesterday", or "Lunch on Wed 4 Nov".
 function mealNameOn(date: string, slot: MealSlot) {
@@ -53,12 +61,13 @@ export function cookLabel(household: Household, cookMemberId: string | null) {
   return name ? `${name} cooks` : undefined;
 }
 
-export function MealsView({ household }: MealsViewProps) {
+export function MealsView({ household, startOnShopping = false }: MealsViewProps) {
   const today = todayIsoDate();
   const thisMonday = mondayOf(today);
   const [monday, setMonday] = useState(thisMonday);
   const { state, retry, plan, clear, addRecipe, updateRecipe, removeRecipe } = useMeals(monday);
   const [screen, setScreen] = useState<MealsScreen>({ name: "week" });
+  const [part, setPart] = useState<MealsPart>(startOnShopping ? "shopping" : "plan");
   const { undoable, offerUndo, takeUndo, dismissUndo } = useUndoable();
   const [error, setError] = useState<string>();
   const [isCheckingOut, setIsCheckingOut] = useState(false);
@@ -116,6 +125,7 @@ export function MealsView({ household }: MealsViewProps) {
     try {
       const { addedItemIds } = await shoppingApi.addRecipe(monday, recipe.id, servings);
       shoppingChanged();
+      setPart("shopping");
       offerUndo({
         message: `${recipe.title} added to the shopping list.`,
         undo: async () => {
@@ -224,11 +234,11 @@ export function MealsView({ household }: MealsViewProps) {
         <p className="eyebrow">Meals</p>
         <h1 className="page-title page-title--large">{describeWeek(monday)}</h1>
 
-        <fieldset className="segmented meals__weeks" aria-label="Week">
-          {[thisMonday, addDays(thisMonday, DAYS_IN_WEEK)].map((weekStart, index) => (
-            <label key={weekStart} className="segmented__option">
-              <input type="radio" name="week" checked={monday === weekStart} onChange={() => setMonday(weekStart)} />
-              {index === 0 ? "This week" : "Next week"}
+        <fieldset className="segmented meals__parts" aria-label="Part of Meals">
+          {PARTS.map((name) => (
+            <label key={name} className="segmented__option">
+              <input type="radio" name="meals-part" checked={part === name} onChange={() => setPart(name)} />
+              {PART_NAMES[name]}
             </label>
           ))}
         </fieldset>
@@ -238,79 +248,104 @@ export function MealsView({ household }: MealsViewProps) {
           </p>
         )}
 
-        <ul className="panel meals__week" aria-label="Meals">
-          {weekDays(monday).map((date) => {
-            const planned = mealsOn(date);
-            const onlyDinner = planned.length === 1 && planned[0].slot === "dinner" ? planned[0] : undefined;
-            const cook = cookLabel(household, onlyDinner?.cookMemberId ?? null);
-            const forHowMany = onlyDinner?.servings ? `for ${onlyDinner.servings}` : undefined;
-            const meta = [cook, forHowMany].filter(Boolean).join(", ");
-            return (
-              <li key={date} className={`panel__row chore${date < today ? " meals__past" : ""}`}>
-                <button className="chore__open" type="button" onClick={() => openDay(date)}>
-                  <ItemIcon name={planned.length > 0 ? iconFor(planned[planned.length - 1].title, "food") : "food"} />
-                  <span className="chore__text">
-                    <span className="meals__day">{formatDay(date)}</span>
-                    {planned.length === 0 && <span className="meals__empty">Nothing planned</span>}
-                    {onlyDinner && <span className="chore__title">{onlyDinner.title}</span>}
-                    {!onlyDinner &&
-                      planned.map((meal) => (
-                        <span key={meal.slot} className="chore__title">
-                          {SLOT_NAMES[meal.slot]}: {meal.title}
-                        </span>
-                      ))}
-                    {meta && <span className="chore__meta">{meta.charAt(0).toUpperCase() + meta.slice(1)}</span>}
-                  </span>
-                </button>
-              </li>
-            );
-          })}
-        </ul>
-
-        <ShoppingList
-          household={household}
-          monday={monday}
-          onUndoable={offerUndo}
-          onSheetChange={setIsCheckingOut}
-          changeCount={shoppingChanges}
-        />
-
-        <section className="chores__group" aria-labelledby="recipes-heading">
-          <h2 id="recipes-heading" className="section-title">
-            Recipes
-          </h2>
-          <button className="button button--block" type="button" onClick={() => setScreen({ name: "add-recipe" })}>
-            Add a recipe
-          </button>
-          {recipes.length === 0 ? (
-            <p className="empty-state">No recipes yet.</p>
-          ) : (
-            <ul className="panel meals__recipes" aria-label="Recipes">
-              {recipes.map((recipe) => (
-                <li key={recipe.id} className="panel__row chore">
-                  <button className="chore__open" type="button" onClick={() => setScreen({ name: "recipe", recipe })}>
-                    <ItemIcon name={iconFor(recipe.title, "food")} />
-                    <span className="chore__text">
-                      <span className="chore__title">{recipe.title}</span>
-                      <span className="chore__meta">
-                        Serves {recipe.servings}, {recipe.ingredients.length} {recipe.ingredients.length === 1 ? "ingredient" : "ingredients"}
-                      </span>
-                    </span>
-                  </button>
-                </li>
+        {/* On a computer the week and the recipes share the left column, next to the shopping list. */}
+        <div className="meals__column">
+          <div className={`meals__part meals__part--plan${part === "plan" ? "" : " meals__part--away"}`}>
+            <fieldset className="segmented meals__weeks" aria-label="Week">
+              {[thisMonday, addDays(thisMonday, DAYS_IN_WEEK)].map((weekStart, index) => (
+                <label key={weekStart} className="segmented__option">
+                  <input type="radio" name="week" checked={monday === weekStart} onChange={() => setMonday(weekStart)} />
+                  {index === 0 ? "This week" : "Next week"}
+                </label>
               ))}
-            </ul>
-          )}
-        </section>
+            </fieldset>
 
-        <PastMeals
-          today={today}
-          onPlan={(date, mealPlan) => plan(date, mealPlan)}
-          onClear={(date) => clear(date)}
-          onUndoable={offerUndo}
-          onSheetChange={setIsPickingDay}
-          week={state.week}
-        />
+            <ul className="panel meals__week" aria-label="Meals">
+              {weekDays(monday).map((date) => {
+                const planned = mealsOn(date);
+                const onlyDinner = planned.length === 1 && planned[0].slot === "dinner" ? planned[0] : undefined;
+                const cook = cookLabel(household, onlyDinner?.cookMemberId ?? null);
+                const forHowMany = onlyDinner?.servings ? `for ${onlyDinner.servings}` : undefined;
+                const meta = [cook, forHowMany].filter(Boolean).join(", ");
+                return (
+                  <li key={date} className={`panel__row chore${date < today ? " meals__past" : ""}${date === today ? " meals__today" : ""}`}>
+                    <button className="chore__open" type="button" onClick={() => openDay(date)}>
+                      <ItemIcon name={planned.length > 0 ? iconFor(planned[planned.length - 1].title, "food") : "food"} />
+                      <span className="chore__text">
+                        <span className="meals__day">{formatDay(date)}</span>
+                        {planned.length === 0 && <span className="meals__empty">Nothing planned</span>}
+                        {onlyDinner && <span className="chore__title">{onlyDinner.title}</span>}
+                        {!onlyDinner &&
+                          planned.map((meal) => (
+                            <span key={meal.slot} className="chore__title">
+                              {SLOT_NAMES[meal.slot]}: {meal.title}
+                            </span>
+                          ))}
+                        {meta && (
+                          <span className="chore__meta">
+                            <span className="with-avatar">
+                              {onlyDinner?.cookMemberId && <Avatar household={household} memberId={onlyDinner.cookMemberId} size="small" />}
+                              {meta.charAt(0).toUpperCase() + meta.slice(1)}
+                            </span>
+                          </span>
+                        )}
+                      </span>
+                    </button>
+                  </li>
+                );
+              })}
+            </ul>
+
+            <PastMeals
+              today={today}
+              onPlan={(date, mealPlan) => plan(date, mealPlan)}
+              onClear={(date) => clear(date)}
+              onUndoable={offerUndo}
+              onSheetChange={setIsPickingDay}
+              week={state.week}
+            />
+          </div>
+
+          <div className={`meals__part meals__part--recipes${part === "recipes" ? "" : " meals__part--away"}`}>
+            <section className="chores__group" aria-labelledby="recipes-heading">
+              <h2 id="recipes-heading" className="section-title">
+                Recipes
+              </h2>
+              <button className="button button--block" type="button" onClick={() => setScreen({ name: "add-recipe" })}>
+                Add a recipe
+              </button>
+              {recipes.length === 0 ? (
+                <p className="empty-state">No recipes yet.</p>
+              ) : (
+                <ul className="panel meals__recipes" aria-label="Recipes">
+                  {recipes.map((recipe) => (
+                    <li key={recipe.id} className="panel__row chore">
+                      <button className="chore__open" type="button" onClick={() => setScreen({ name: "recipe", recipe })}>
+                        <ItemIcon name={iconFor(recipe.title, "food")} />
+                        <span className="chore__text">
+                          <span className="chore__title">{recipe.title}</span>
+                          <span className="chore__meta">
+                            Serves {recipe.servings}, {recipe.ingredients.length} {recipe.ingredients.length === 1 ? "ingredient" : "ingredients"}
+                          </span>
+                        </span>
+                      </button>
+                    </li>
+                  ))}
+                </ul>
+              )}
+            </section>
+          </div>
+        </div>
+
+        <div className={`meals__part meals__part--shopping${part === "shopping" ? "" : " meals__part--away"}`}>
+          <ShoppingList
+            household={household}
+            monday={monday}
+            onUndoable={offerUndo}
+            onSheetChange={setIsCheckingOut}
+            changeCount={shoppingChanges}
+          />
+        </div>
 
         {undoable && (
           <UndoBar
