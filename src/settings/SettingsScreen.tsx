@@ -217,6 +217,10 @@ export function SettingsScreen({ household, theme, onRename, onAddMember, onRemo
           </button>
         </section>
       )}
+
+      <p className="settings__credit">
+        Made by <a href="https://www.flynndiener.ch">Flynn Diener</a>
+      </p>
     </div>
   );
 }

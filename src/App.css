@@ -1242,6 +1242,18 @@ body.has-sheet {
   margin-top: var(--space-3);
 }
 
+.settings__credit {
+  margin-top: var(--space-8);
+  text-align: center;
+  font-size: var(--font-size-small);
+  color: var(--color-ink-muted);
+}
+
+.settings__credit a {
+  color: inherit;
+  text-underline-offset: 0.2em;
+}
+
 .setting {
   display: flex;
   align-items: center;
